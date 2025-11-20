@@ -14,7 +14,6 @@ export function Login() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [showDemo, setShowDemo] = useState(false)
 
   const { login, isLoading } = useAuth()
 
@@ -33,145 +32,86 @@ export function Login() {
     }
   }
 
-  const fillDemoCredentials = (role: 'admin' | 'member') => {
-    if (role === 'admin') {
-      setFormData({
-        email: 'admin@chama.com',
-        password: 'admin123'
-      })
-    } else {
-      setFormData({
-        email: 'john@chama.com',
-        password: 'member123'
-      })
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Logo and Title */}
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
-          <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4">
-            <PiggyBank className="h-8 w-8 text-white" />
+          <div className="mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center mb-6 shadow-lg">
+            <PiggyBank className="h-10 w-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Chama Manager</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <h1 className="text-4xl font-extrabold text-gray-900">Chama Manager</h1>
+          <p className="text-gray-600 mt-2 text-lg">Sign in to your account</p>
         </div>
 
-        {/* Login Form */}
-        <Card>
+        <Card className="shadow-2xl rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-center">Welcome Back</CardTitle>
+            <CardTitle className="text-center text-2xl font-bold">Welcome Back</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
+                <Alert variant="destructive" className="bg-red-50 border-red-200 text-red-800">
+                  <AlertCircle className="h-5 w-5" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-sm font-semibold text-gray-700">Email</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder="you@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="pl-10"
+                    className="pl-12 h-12 text-base rounded-lg"
                     disabled={isLoading}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password"  className="text-sm font-semibold text-gray-700">Password</Label>
+                  <a href="#" className="text-sm text-primary hover:underline">Forgot password?</a>
+                </div>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     id="password"
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="pl-10 pr-10"
+                    className="pl-12 pr-12 h-12 text-base rounded-lg"
                     disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     disabled={isLoading}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
               </div>
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-12 text-lg font-bold rounded-lg"
                 disabled={isLoading}
               >
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
-
-            {/* Demo Credentials */}
-            <div className="mt-6 pt-6 border-t">
-              <div className="text-center mb-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDemo(!showDemo)}
-                  className="text-sm text-gray-500"
-                >
-                  {showDemo ? 'Hide' : 'Show'} Demo Credentials
-                </Button>
-              </div>
-
-              {showDemo && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fillDemoCredentials('admin')}
-                      className="text-xs"
-                      disabled={isLoading}
-                    >
-                      Login as Admin
-                      <span className="ml-2 text-gray-500">(admin@chama.com)</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => fillDemoCredentials('member')}
-                      className="text-xs"
-                      disabled={isLoading}
-                    >
-                      Login as Member
-                      <span className="ml-2 text-gray-500">(john@chama.com)</span>
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 text-center">
-                    Both demo accounts use password: admin123 / member123
-                  </p>
-                </div>
-              )}
-            </div>
           </CardContent>
         </Card>
 
-        {/* Footer */}
         <div className="text-center text-sm text-gray-500">
-          <p>Secure chama management system</p>
-          <p className="mt-1">© 2025 Chama Manager</p>
+          <p>Don't have an account? <a href="#" className="font-semibold text-primary hover:underline">Sign up</a></p>
         </div>
       </div>
     </div>
