@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import User from '../models/User.js';
 import Member from '../models/Member.js';
 
@@ -129,6 +130,107 @@ export const login = async (req, res) => {
   }
 };
 
+// @desc    Forgot password
+// @route   POST /api/auth/forgot-password
+// @access  Public
+export const forgotPassword = async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      // We don't want to reveal that the user does not exist
+      return res.status(200).json({
+        success: true,
+        message: 'If an account with this email exists, a password reset link has been sent.'
+      });
+    }
+
+    // Get reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to resetPasswordToken field
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Set expire
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset URL
+    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password.html?token=${resetToken}`;
+
+    // In a real app, you would email this URL. For this example, we'll log it.
+    console.log('Password reset URL:', resetUrl);
+
+    res.status(200).json({
+      success: true,
+      message: 'If an account with this email exists, a password reset link has been sent.'
+    });
+  } catch (error) {
+    console.error(error);
+    // Clear reset fields if there's an error
+    const user = await User.findOne({ email: req.body.email });
+    if (user) {
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+    }
+    res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+// @desc    Reset password
+// @route   PUT /api/auth/reset-password/:resettoken
+// @access  Public
+export const resetPassword = async (req, res) => {
+  try {
+    // Get hashed token
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.resettoken)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired token'
+      });
+    }
+
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    // Create token
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully',
+      token
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
@@ -201,7 +303,7 @@ export const changePassword = async (req, res) => {
       message: 'Password updated successfully',
       token
     });
-  } catch (error) {
+  } catch (error) {.
     res.status(500).json({
       success: false,
       error: error.message

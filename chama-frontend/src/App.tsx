@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/AppSidebar'
 import { Dashboard } from '@/components/Dashboard'
@@ -13,6 +13,18 @@ type Page = 'dashboard' | 'members' | 'contributions' | 'loans' | 'meetings' | '
 
 function App() {
   const [activePage, setActivePage] = useState<Page>('dashboard')
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+    } else {
+      window.location.href = '/index.html';
+    }
+    setIsLoading(false);
+  }, []);
 
   const renderPage = () => {
     switch (activePage) {
@@ -31,6 +43,14 @@ function App() {
       default:
         return <Dashboard />
     }
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Or a loading spinner
+  }
+
+  if (!isAuthenticated) {
+    return null; // This will not be reached because of the redirect
   }
 
   return (
