@@ -12,7 +12,7 @@ document.getElementById('registerForm').addEventListener('submit', async (event)
     errorMessage.style.display = 'none';
 
     try {
-        const response = await fetch('http://localhost:5173/api/auth/register', {
+        const response = await fetch('https://mfms-1.onrender.com/api/auth/register', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
