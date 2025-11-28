@@ -22,33 +22,39 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<User | null>({
+    id: 'dummy-id',
+    name: 'Dummy User',
+    email: 'dummy@example.com',
+    role: 'admin',
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const verifyUser = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const response = await fetch('/api/auth/me', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data.data);
-          } else {
-            localStorage.removeItem('token');
-          }
-        } catch (error) {
-          console.error('Failed to verify token', error);
-          localStorage.removeItem('token');
-        }
-      }
-      setIsLoading(false);
-    };
-    verifyUser();
+    // Temporarily disabled token verification for direct access
+    // const verifyUser = async () => {
+    //   const token = localStorage.getItem('token');
+    //   if (token) {
+    //     try {
+    //       const response = await fetch('/api/auth/me', {
+    //         headers: {
+    //           'Authorization': `Bearer ${token}`
+    //         }
+    //       });
+    //       if (response.ok) {
+    //         const data = await response.json();
+    //         setUser(data.data);
+    //       } else {
+    //         localStorage.removeItem('token');
+    //       }
+    //     } catch (error) {
+    //       console.error('Failed to verify token', error);
+    //       localStorage.removeItem('token');
+    //     }
+    //   }
+    //   setIsLoading(false);
+    // };
+    // verifyUser();
   }, [])
 
   const handleResponse = async (response: Response) => {

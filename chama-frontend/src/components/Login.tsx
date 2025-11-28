@@ -1,5 +1,5 @@
 /** @jsxImportSource react */
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { PiggyBank, Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 export function Login() {
   const [formData, setFormData] = useState({
@@ -19,19 +19,6 @@ export function Login() {
   const [error, setError] = useState('')
 
   const { login, isLoading } = useAuth()
-  const navigate = useNavigate();
-
-  // Temporary bypass for login form - redirects to homepage directly
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // You can add logic here to "simulate" a login or just redirect
-      // For now, we just redirect to get past the login page
-      navigate('/');
-    }, 1000); // Redirect after 1 second
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -59,8 +46,6 @@ export function Login() {
           <p className="text-gray-600 mt-2 text-lg">Sign in to your account</p>
         </div>
 
-        {/* Temporarily commented out login form to bypass directly as per user request */}
-        {/*
         <Card className="shadow-2xl rounded-2xl">
           <CardHeader>
             <CardTitle className="text-center text-2xl font-bold">Welcome Back</CardTitle>
@@ -127,7 +112,6 @@ export function Login() {
             </form>
           </CardContent>
         </Card>
-        */}
 
         <div className="text-center text-sm text-gray-500">
           <p>Don't have an account? <Link to="/register" className="font-semibold text-primary hover:underline">Sign up</Link></p>
