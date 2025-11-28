@@ -22,21 +22,22 @@ dotenv.config();
 // Connect to database
 connectDB();
 
-const express = require('express');
-const cors = require('cors'); // Line 1: Import it
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:5173',
+  'https://chama-frontend.vercel.app' // Assuming this is the Vercel URL
+].filter(Boolean);
 
-const app = express();
-
-// Body parser middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Security middleware
-app.use(helmet());
-
-// CORS
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true
 }));
 
@@ -65,10 +66,6 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.use(cors()); // Enable CORS for all routes
-
-// Body parser middleware
-app.use(express.json());
 // Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
