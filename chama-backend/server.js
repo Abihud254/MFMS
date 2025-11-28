@@ -1,3 +1,4 @@
+// Imports and setup
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
@@ -25,9 +26,14 @@ connectDB();
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
-  'https://mfms-chi.vercel.app' // New Vercel URL
+  'https://mfms-chi.vercel.app', // New Vercel URL
+  'https://simplemfms.netlify.app' // Netlify origin
 ].filter(Boolean);
 
+//Create App 
+const app = express();
+
+// Middleware - CORS must be applied after creating 'app'
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -41,6 +47,9 @@ app.use(cors({
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"] // Added methods as per user suggestion
 }));
+
+// Parse JSON bodies - essential for API routes
+app.use(express.json());
 
 // Logging middleware
 if (process.env.NODE_ENV === 'development') {
