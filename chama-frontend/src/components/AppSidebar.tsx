@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Home,
   Users,
@@ -27,7 +28,7 @@ interface AppSidebarProps {
   onPageChange: (page: Page) => void
 }
 
-const menuItems = [
+const menuItems: { title: string; icon: React.ComponentType<any>; page: Page }[] = [
   {
     title: 'Dashboard',
     icon: Home,
@@ -77,17 +78,20 @@ export function AppSidebar({ activePage, onPageChange }: AppSidebarProps) {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.page}>
-                  <SidebarMenuButton
-                    isActive={activePage === item.page}
-                    onClick={() => onPageChange(item.page)}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <SidebarMenuItem key={item.page}>
+                    <SidebarMenuButton
+                      isActive={activePage === item.page}
+                      onClick={() => onPageChange(item.page)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -12,12 +12,12 @@
 
     /* Bundler mode */
     "moduleResolution": "bundler",
+    "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "bippy/dist",
 
     /* Linting */
     "strict": true,
