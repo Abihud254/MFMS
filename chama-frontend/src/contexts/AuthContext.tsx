@@ -22,39 +22,33 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>({
-    id: 'dummy-id',
-    name: 'Dummy User',
-    email: 'dummy@example.com',
-    role: 'admin',
-  });
-  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Temporarily disabled token verification for direct access
-    // const verifyUser = async () => {
-    //   const token = localStorage.getItem('token');
-    //   if (token) {
-    //     try {
-    //       const response = await fetch('/api/auth/me', {
-    //         headers: {
-    //           'Authorization': `Bearer ${token}`
-    //         }
-    //       });
-    //       if (response.ok) {
-    //         const data = await response.json();
-    //         setUser(data.data);
-    //       } else {
-    //         localStorage.removeItem('token');
-    //       }
-    //     } catch (error) {
-    //       console.error('Failed to verify token', error);
-    //       localStorage.removeItem('token');
-    //     }
-    //   }
-    //   setIsLoading(false);
-    // };
-    // verifyUser();
+    const verifyUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.data);
+          } else {
+            localStorage.removeItem('token');
+          }
+        } catch (error) {
+          console.error('Failed to verify token', error);
+          localStorage.removeItem('token');
+        }
+      }
+      setIsLoading(false);
+    };
+    verifyUser();
   }, [])
 
   const handleResponse = async (response: Response) => {
@@ -126,10 +120,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       const data = await response.json();
-      setUser(data.user);
-      localStorage.setItem('token', data.token);
+      setUser(data.data); // Set user from `data` property
+      localStorage.setItem('token', data.token); // Save the token
       setIsLoading(false);
-      return { success: true, message: 'Registration successful' };
+      return { success: true, message: data.message }; // Return the message from the backend
 
     } catch (error) {
       setIsLoading(false);

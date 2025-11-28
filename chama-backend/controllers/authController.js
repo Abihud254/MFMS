@@ -75,6 +75,9 @@ export const register = async (req, res) => {
         message
       });
 
+      // Also generate a login token for auto-login
+      const token = generateToken(user._id);
+
       res.status(201).json({
         success: true,
         data: {
@@ -85,6 +88,7 @@ export const register = async (req, res) => {
           member: user.member,
           isVerified: user.isVerified
         },
+        token, // Send the login token
         message: 'User registered successfully. Please check your email for verification link.'
       });
     } catch (err) {
