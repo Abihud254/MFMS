@@ -72,20 +72,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        // If the response is not JSON, handle it as a plain text error
         setIsLoading(false);
-        try {
-          // Try to parse as JSON, as the error might be a structured message
-          const errorData = JSON.parse(errorText);
-          return { success: false, message: errorData.error || 'Login failed.' };
-        } catch (e) {
-          // If not JSON, return the raw text
-          return { success: false, message: errorText || 'Login failed.' };
-        }
+        return { success: false, message: responseText || 'An unknown error occurred.' };
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        return { success: false, message: data.error || 'Login failed.' };
+      }
+
       setUser(data.user);
       localStorage.setItem('token', data.token);
       setIsLoading(false);
@@ -108,18 +109,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         body: JSON.stringify({ name, email, password }),
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
         setIsLoading(false);
-        try {
-          const errorData = JSON.parse(errorText);
-          return { success: false, message: errorData.error || 'Registration failed.' };
-        } catch (e) {
-          return { success: false, message: errorText || 'Registration failed.' };
-        }
+        return { success: false, message: responseText || 'An unknown error occurred.' };
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        return { success: false, message: data.error || 'Registration failed.' };
+      }
+
       setUser(data.data); // Set user from `data` property
       localStorage.setItem('token', data.token); // Save the token
       setIsLoading(false);
