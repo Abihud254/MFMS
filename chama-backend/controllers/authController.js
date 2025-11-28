@@ -303,7 +303,7 @@ export const changePassword = async (req, res) => {
       message: 'Password updated successfully',
       token
     });
-  } catch (error) {.
+  } catch (error) {
     res.status(500).json({
       success: false,
       error: error.message
