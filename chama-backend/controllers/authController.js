@@ -11,16 +11,6 @@ const generateToken = (id) => {
   });
 };
 
-// Generate email verification token
-const generateEmailVerificationToken = () => {
-  const verificationToken = crypto.randomBytes(32).toString('hex');
-  return {
-    token: crypto.createHash('sha256').update(verificationToken).digest('hex'),
-    rawToken: verificationToken,
-    expire: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
-  };
-};
-
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
@@ -54,85 +44,31 @@ export const register = async (req, res) => {
       email,
       password,
       role: role || 'member',
-      member: memberId || null
+      member: memberId || null,
+      isVerified: true // Automatically verify user
     });
 
-    // Generate and set email verification token
-    const { token: hashedToken, rawToken, expire } = generateEmailVerificationToken();
-    user.emailVerificationToken = hashedToken;
-    user.emailVerificationExpire = expire;
-    await user.save({ validateBeforeSave: false });
+    // Generate a login token
+    const token = generateToken(user._id);
 
-    // Create verification URL
-    const verificationUrl = `${req.protocol}://${req.get('host')}/api/auth/verifyemail/${rawToken}`;
-
-    const message = `Please verify your email by clicking on this link: \n\n ${verificationUrl}`;
-
-    try {
-      await sendEmail({
+    res.status(201).json({
+      success: true,
+      data: {
+        _id: user._id,
+        name: user.name,
         email: user.email,
-        subject: 'Email Verification',
-        message
-      });
-
-      // Also generate a login token for auto-login
-      const token = generateToken(user._id);
-
-      res.status(201).json({
-        success: true,
-        data: {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          member: user.member,
-          isVerified: user.isVerified
-        },
-        token, // Send the login token
-        message: 'User registered successfully. Please check your email for verification link.'
-      });
-    } catch (err) {
-      console.error(err);
-      user.emailVerificationToken = undefined;
-      user.emailVerificationExpire = undefined;
-      await user.save({ validateBeforeSave: false });
-      return res.status(500).json({ success: false, error: 'Email could not be sent. Please try again later.' });
-    }
+        role: user.role,
+        member: user.member,
+        isVerified: user.isVerified
+      },
+      token, // Send the login token
+      message: 'User registered successfully. You can now log in.'
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
       error: error.message
     });
-  }
-};
-
-// @desc    Verify user email
-// @route   GET /api/auth/verifyemail/:token
-// @access  Public
-export const verifyEmail = async (req, res) => {
-  try {
-    const { token } = req.params;
-
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-
-    const user = await User.findOne({
-      emailVerificationToken: hashedToken,
-      emailVerificationExpire: { $gt: Date.now() }
-    });
-
-    if (!user) {
-      return res.status(400).json({ success: false, error: 'Invalid or expired verification token.' });
-    }
-
-    user.isVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpire = undefined;
-    await user.save();
-
-    res.status(200).json({ success: true, message: 'Email verified successfully.' });
-
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
   }
 };
 
