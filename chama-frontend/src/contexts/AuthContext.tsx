@@ -5,6 +5,7 @@ interface User {
   name: string;
   email: string;
   role: 'admin' | 'member';
+  token?: string;
 }
 
 interface AuthContextType {
@@ -37,7 +38,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           });
           if (response.ok) {
             const data = await response.json();
-            setUser(data.data);
+            setUser({ ...data.data, token });
           } else {
             localStorage.removeItem('token');
           }
@@ -87,7 +88,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { success: false, message: data.error || 'Login failed.' };
       }
 
-      setUser(data.user);
+      setUser({ ...data.user, token: data.token });
       localStorage.setItem('token', data.token);
       setIsLoading(false);
       return { success: true, message: 'Login successful' };
@@ -123,7 +124,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return { success: false, message: data.error || 'Registration failed.' };
       }
 
-      setUser(data.data); // Set user from `data` property
+      setUser({ ...data.data, token: data.token }); // Set user from `data` property and add token
       localStorage.setItem('token', data.token); // Save the token
       setIsLoading(false);
       return { success: true, message: data.message }; // Return the message from the backend

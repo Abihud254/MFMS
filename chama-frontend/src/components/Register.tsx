@@ -17,6 +17,7 @@ export function Register() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   
   const { register, isLoading } = useAuth();
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export function Register() {
 
     const result = await register(formData.name, formData.email, formData.password);
     if (result.success) {
-      navigate('/'); // Redirect to homepage on success
+      setSuccessMessage('Account created successfully! You can now log in.');
     } else {
       setError(result.message);
     }
