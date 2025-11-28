@@ -33,6 +33,9 @@ const allowedOrigins = [
 //Create App 
 const app = express();
 
+//Allow trust proxy for rate limiting (trust 1st proxy)
+app.set('trust proxy', 1);
+
 // Middleware - CORS must be applied after creating 'app'
 app.use(cors({
   origin: (origin, callback) => {
