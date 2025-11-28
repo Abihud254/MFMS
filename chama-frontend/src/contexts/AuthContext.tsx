@@ -62,56 +62,74 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
-      const data = await handleResponse(response);
-      if (response.ok) {
-        setUser(data.user);
-        localStorage.setItem('token', data.token);
+
+      if (!response.ok) {
+        const errorText = await response.text();
         setIsLoading(false);
-        return { success: true, message: 'Login successful' };
-      } else {
-        setIsLoading(false);
-        return { success: false, message: data.message || 'Login failed' };
+        try {
+          // Try to parse as JSON, as the error might be a structured message
+          const errorData = JSON.parse(errorText);
+          return { success: false, message: errorData.message || 'Login failed.' };
+        } catch (e) {
+          // If not JSON, return the raw text
+          return { success: false, message: errorText || 'Login failed.' };
+        }
       }
+
+      const data = await response.json();
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      setIsLoading(false);
+      return { success: true, message: 'Login successful' };
+
     } catch (error) {
-      setIsLoading(false)
+      setIsLoading(false);
       return { success: false, message: 'An error occurred during login.' };
     }
-  }
+  };
 
   const register = async (name: string, email: string, password: string) => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password })
+        body: JSON.stringify({ name, email, password }),
       });
-      const data = await handleResponse(response);
-      if (response.ok) {
-        setUser(data.user);
-        localStorage.setItem('token', data.token);
+
+      if (!response.ok) {
+        const errorText = await response.text();
         setIsLoading(false);
-        return { success: true, message: 'Registration successful' };
-      } else {
-        setIsLoading(false);
-        return { success: false, message: data.message || 'Registration failed' };
+        try {
+          const errorData = JSON.parse(errorText);
+          return { success: false, message: errorData.message || 'Registration failed.' };
+        } catch (e) {
+          return { success: false, message: errorText || 'Registration failed.' };
+        }
       }
+
+      const data = await response.json();
+      setUser(data.user);
+      localStorage.setItem('token', data.token);
+      setIsLoading(false);
+      return { success: true, message: 'Registration successful' };
+
     } catch (error) {
-      setIsLoading(false)
+      setIsLoading(false);
       return { success: false, message: 'An error occurred during registration.' };
     }
-  }
+  };
 
   const logout = () => {
     setUser(null)
