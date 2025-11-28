@@ -1,54 +1,21 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 
 interface User {
-  id: number
-  email: string
-  name: string
-  role: 'admin' | 'member'
-  memberId?: number // Only for member users
-  avatar?: string
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'member';
 }
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
+  register: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }>
   logout: () => void
-  isAdmin: () => boolean
-  isMember: () => boolean
   isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
-
-// Mock users for demo
-const mockUsers: (User & { password: string })[] = [
-  {
-    id: 1,
-    email: 'admin@chama.com',
-    password: 'admin123',
-    name: 'System Administrator',
-    role: 'admin',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
-  },
-  {
-    id: 2,
-    email: 'john@chama.com',
-    password: 'member123',
-    name: 'John Doe',
-    role: 'member',
-    memberId: 1,
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-  },
-  {
-    id: 3,
-    email: 'jane@chama.com',
-    password: 'member123',
-    name: 'Jane Smith',
-    role: 'member',
-    memberId: 2,
-    avatar: 'https://images.unsplash.com/photo-1494790108755-2616b2cd12c7?w=150&h=150&fit=crop&crop=face'
-  }
-]
 
 interface AuthProviderProps {
   children: ReactNode
@@ -59,48 +26,93 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for stored user session
-    const storedUser = localStorage.getItem('chama_user')
-    if (storedUser) {
-      setUser(JSON.parse(storedUser))
-    }
-    setIsLoading(false)
+    const verifyUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data.data);
+          } else {
+            localStorage.removeItem('token');
+          }
+        } catch (error) {
+          console.error('Failed to verify token', error);
+          localStorage.removeItem('token');
+        }
+      }
+      setIsLoading(false);
+    };
+    verifyUser();
   }, [])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true)
-
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    const foundUser = mockUsers.find(u => u.email === email && u.password === password)
-
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser
-      setUser(userWithoutPassword)
-      localStorage.setItem('chama_user', JSON.stringify(userWithoutPassword))
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setUser(data.user);
+        localStorage.setItem('token', data.token);
+        setIsLoading(false);
+        return { success: true, message: 'Login successful' };
+      } else {
+        setIsLoading(false);
+        return { success: false, message: data.message || 'Login failed' };
+      }
+    } catch (error) {
       setIsLoading(false)
-      return true
+      return { success: false, message: 'An error occurred during login.' };
     }
+  }
 
-    setIsLoading(false)
-    return false
+  const register = async (name: string, email: string, password: string) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setUser(data.user);
+        localStorage.setItem('token', data.token);
+        setIsLoading(false);
+        return { success: true, message: 'Registration successful' };
+      } else {
+        setIsLoading(false);
+        return { success: false, message: data.message || 'Registration failed' };
+      }
+    } catch (error) {
+      setIsLoading(false)
+      return { success: false, message: 'An error occurred during registration.' };
+    }
   }
 
   const logout = () => {
     setUser(null)
-    localStorage.removeItem('chama_user')
+    localStorage.removeItem('token')
   }
-
-  const isAdmin = () => user?.role === 'admin'
-  const isMember = () => user?.role === 'member'
 
   const value: AuthContextType = {
     user,
     login,
+    register,
     logout,
-    isAdmin,
-    isMember,
     isLoading
   }
 
