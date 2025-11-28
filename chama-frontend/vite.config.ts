@@ -10,7 +10,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: {
-    exclude: ["bippy/dist/jsx-dev-runtime", "bippy/dist/jsx-runtime"],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://mfms.onrender.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
+      },
+    },
   },
 });

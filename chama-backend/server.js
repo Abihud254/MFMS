@@ -22,6 +22,9 @@ dotenv.config();
 // Connect to database
 connectDB();
 
+const express = require('express');
+const cors = require('cors'); // Line 1: Import it
+
 const app = express();
 
 // Body parser middleware
@@ -62,6 +65,10 @@ app.get('/health', (req, res) => {
   });
 });
 
+app.use(cors()); // Enable CORS for all routes
+
+// Body parser middleware
+app.use(express.json());
 // Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
