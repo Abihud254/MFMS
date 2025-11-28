@@ -31,7 +31,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await fetch('/api/auth/me', {
+          const response = await fetch('https://mfms-1.onrender.com/api/auth/me', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -102,7 +102,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('https://mfms-1.onrender.com/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
