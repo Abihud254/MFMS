@@ -78,7 +78,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
           // Try to parse as JSON, as the error might be a structured message
           const errorData = JSON.parse(errorText);
-          return { success: false, message: errorData.message || 'Login failed.' };
+          return { success: false, message: errorData.error || 'Login failed.' };
         } catch (e) {
           // If not JSON, return the raw text
           return { success: false, message: errorText || 'Login failed.' };
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false);
         try {
           const errorData = JSON.parse(errorText);
-          return { success: false, message: errorData.message || 'Registration failed.' };
+          return { success: false, message: errorData.error || 'Registration failed.' };
         } catch (e) {
           return { success: false, message: errorText || 'Registration failed.' };
         }

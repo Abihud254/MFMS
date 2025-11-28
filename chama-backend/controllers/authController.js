@@ -2,12 +2,23 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/User.js';
 import Member from '../models/Member.js';
+import sendEmail from '../utils/sendEmail.js';
 
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '7d'
   });
+};
+
+// Generate email verification token
+const generateEmailVerificationToken = () => {
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+  return {
+    token: crypto.createHash('sha256').update(verificationToken).digest('hex'),
+    rawToken: verificationToken,
+    expire: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+  };
 };
 
 // @desc    Register user
@@ -46,25 +57,78 @@ export const register = async (req, res) => {
       member: memberId || null
     });
 
-    // Create token
-    const token = generateToken(user._id);
+    // Generate and set email verification token
+    const { token: hashedToken, rawToken, expire } = generateEmailVerificationToken();
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationExpire = expire;
+    await user.save({ validateBeforeSave: false });
 
-    res.status(201).json({
-      success: true,
-      data: {
-        _id: user._id,
-        name: user.name,
+    // Create verification URL
+    const verificationUrl = `${req.protocol}://${req.get('host')}/api/auth/verifyemail/${rawToken}`;
+
+    const message = `Please verify your email by clicking on this link: \n\n ${verificationUrl}`;
+
+    try {
+      await sendEmail({
         email: user.email,
-        role: user.role,
-        member: user.member
-      },
-      token
-    });
+        subject: 'Email Verification',
+        message
+      });
+
+      res.status(201).json({
+        success: true,
+        data: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          member: user.member,
+          isVerified: user.isVerified
+        },
+        message: 'User registered successfully. Please check your email for verification link.'
+      });
+    } catch (err) {
+      console.error(err);
+      user.emailVerificationToken = undefined;
+      user.emailVerificationExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+      return res.status(500).json({ success: false, error: 'Email could not be sent. Please try again later.' });
+    }
   } catch (error) {
     res.status(500).json({
       success: false,
       error: error.message
     });
+  }
+};
+
+// @desc    Verify user email
+// @route   GET /api/auth/verifyemail/:token
+// @access  Public
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired verification token.' });
+    }
+
+    user.isVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpire = undefined;
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Email verified successfully.' });
+
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -160,24 +224,31 @@ export const forgotPassword = async (req, res) => {
     await user.save({ validateBeforeSave: false });
 
     // Create reset URL
-    const resetUrl = `${req.protocol}://${req.get('host')}/reset-password.html?token=${resetToken}`;
+    // Frontend URL for reset password. User needs to replace this with the actual frontend URL.
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawResetToken}`;
 
-    // In a real app, you would email this URL. For this example, we'll log it.
-    console.log('Password reset URL:', resetUrl);
+    const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
 
-    res.status(200).json({
-      success: true,
-      message: 'If an account with this email exists, a password reset link has been sent.'
-    });
-  } catch (error) {
-    console.error(error);
-    // Clear reset fields if there's an error
-    const user = await User.findOne({ email: req.body.email });
-    if (user) {
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Password Reset Token',
+        message
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Email sent'
+      });
+    } catch (err) {
+      console.error(err);
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
       await user.save({ validateBeforeSave: false });
+      return res.status(500).json({ success: false, error: 'Email could not be sent. Please try again later.' });
     }
+  } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       error: 'Server error'

@@ -10,6 +10,9 @@ import { Reports } from '@/components/Reports';
 import { Toaster } from '@/components/ui/sonner';
 import { Login } from '@/components/Login';
 import { Register } from '@/components/Register';
+import { ForgotPassword } from '@/components/ForgotPassword'; // Import the new component
+import { ResetPassword } from '@/components/ResetPassword'; // Import the new component
+import { EmailVerification } from '@/components/EmailVerification'; // Import the new component
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 
@@ -43,11 +46,13 @@ const AppContent = () => {
     return <div>Loading...</div>; // Or a loading spinner
   }
 
-  if (!user && !['/login', '/register'].includes(location.pathname)) {
+  // Redirect unauthenticated users to login, but allow access to /forgot-password, /register, /reset-password and /verifyemail
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password/:token', '/verifyemail/:token'];
+  if (!user && !publicPaths.some(path => location.pathname.startsWith(path.replace('/:token', '')))) {
     return <Navigate to="/login" />;
   }
 
-  if (user && ['/login', '/register'].includes(location.pathname)) {
+  if (user && publicPaths.some(path => location.pathname.startsWith(path.replace('/:token', '')))) {
     return <Navigate to="/" />;
   }
 
@@ -73,6 +78,9 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+      <Route path="/verifyemail/:token" element={<EmailVerification />} /> {/* New route */}
       <Route path="/*" element={<AppContent />} />
     </Routes>
   );
