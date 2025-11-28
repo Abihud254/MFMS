@@ -5,35 +5,42 @@ document.getElementById('loginForm').addEventListener('submit', async (event) =>
     const password = document.getElementById('password').value;
     const errorMessage = document.getElementById('errorMessage');
 
-    try {
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            // Assuming the backend returns a token
-            if (data.token) {
-                // Store the token (e.g., in localStorage)
-                localStorage.setItem('token', data.token);
-                // Redirect to the dashboard
-                window.location.href = '/chama-frontend/'; // Adjust this path if needed
-            } else {
-                errorMessage.textContent = 'Login successful, but no token received.';
-                errorMessage.style.display = 'block';
-            }
-        } else {
+    
+fetch('/api/login', {
+    method: 'POST', // or GET, depending on your API
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, password }), // use collected form values
+})
+.then(async response => {
+    // Check if the response is OK (status in the 200-299 range)
+    if (!response.ok) {
+        // Attempt to parse as JSON first for server-defined errors
+        try {
             const errorData = await response.json();
-            errorMessage.textContent = errorData.message || 'Login failed. Please check your credentials.';
-            errorMessage.style.display = 'block';
+            // If it's valid JSON, throw it to be caught
+            throw new Error(errorData.message || 'Server error');
+        } catch (jsonError) {
+            // If parsing as JSON fails (e.g., it's HTML or plain text)
+            // Read the response as text and include it in the error
+            const errorText = await response.text();
+            throw new Error(`HTTP error ${response.status}: ${errorText.substring(0, 100)}`); // Limit text for brevity
         }
-    } catch (error) {
-        console.error('Login error:', error);
-        errorMessage.textContent = 'An error occurred during login. Please try again.';
-        errorMessage.style.display = 'block';
     }
+    // If response is OK, parse as JSON
+    return response.json();
+})
+.then(data => {
+    // Handle successful login data
+    console.log('Login successful:', data);
+    // Redirect or update UI
+})
+.catch(error => {
+    // This catch block will now handle both network errors and custom errors thrown above
+    console.error('Login error:', error); // This will show a more informative error
+    errorMessage.textContent = error.message || 'An unexpected error occurred during login.';
+    errorMessage.style.display = 'block';
+});
+
 });
