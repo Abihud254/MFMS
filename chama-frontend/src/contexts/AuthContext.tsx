@@ -51,6 +51,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     verifyUser();
   }, [])
 
+  const handleResponse = async (response: Response) => {
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.indexOf('application/json') !== -1) {
+        return response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(`Expected JSON, but received ${contentType}. Response: ${text}`);
+      }
+    };
+
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
@@ -61,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         },
         body: JSON.stringify({ email, password })
       });
-      const data = await response.json();
+      const data = await handleResponse(response);
       if (response.ok) {
         setUser(data.user);
         localStorage.setItem('token', data.token);
@@ -87,7 +97,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         },
         body: JSON.stringify({ name, email, password })
       });
-      const data = await response.json();
+      const data = await handleResponse(response);
       if (response.ok) {
         setUser(data.user);
         localStorage.setItem('token', data.token);
