@@ -35,17 +35,25 @@ export function Reports() {
       setLoading(true);
       setError('');
       try {
-        const [summaryRes, contributionsRes] = await Promise.all([
+        const [summaryRes, contributionsRes, loanPerformanceRes, trendsRes] = await Promise.all([
           fetch('https://mfms-1.onrender.com/api/reports/financial-summary', {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
           fetch('https://mfms-1.onrender.com/api/reports/contributions', {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
+          fetch('https://mfms-1.onrender.com/api/reports/loan-performance', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+          fetch('https://mfms-1.onrender.com/api/reports/trends', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
         ]);
 
         const summaryData = await summaryRes.json();
         const contributionsData = await contributionsRes.json();
+        const loanPerformanceData = await loanPerformanceRes.json();
+        const trendsData = await trendsRes.json();
 
         if (summaryData.success) {
           setFinancialSummary(summaryData.data);
@@ -58,6 +66,19 @@ export function Reports() {
         } else {
           setError(prev => prev + (prev ? ' and ' : '') + (contributionsData.error || 'Failed to fetch member contributions'));
         }
+
+        if (loanPerformanceData.success) {
+          setLoanPerformance(loanPerformanceData.data.loans);
+        } else {
+          setError(prev => prev + (prev ? ' and ' : '') + (loanPerformanceData.error || 'Failed to fetch loan performance'));
+        }
+
+        if (trendsData.success) {
+          setMonthlyData(trendsData.data);
+        } else {
+          setError(prev => prev + (prev ? ' and ' : '') + (trendsData.error || 'Failed to fetch monthly trends'));
+        }
+
       } catch (err: any) {
         setError(prev => prev + (prev ? ' and ' : '') + (err.message || 'An error occurred while fetching reports data'));
       } finally {
@@ -347,8 +368,8 @@ export function Reports() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {loanPerformance.map((loan, index) => (
-                      <TableRow key={index}>
+                    {loanPerformance.map((loan: any) => (
+                      <TableRow key={loan._id}>
                         <TableCell className="font-medium">{loan.member}</TableCell>
                         <TableCell>{formatCurrency(loan.amount)}</TableCell>
                         <TableCell>{formatCurrency(loan.outstanding)}</TableCell>
@@ -357,7 +378,7 @@ export function Reports() {
                             {loan.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>{loan.nextPayment}</TableCell>
+                        <TableCell>{loan.nextPayment ? new Date(loan.nextPayment).toLocaleDateString() : 'N/A'}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <div className="w-16 h-2 bg-gray-200 rounded-full">
@@ -389,7 +410,7 @@ export function Reports() {
                 <CardContent>
                   <div className="text-2xl font-bold">{formatCurrency(financialSummary.totalLoansIssued)}</div>
                   <p className="text-xs text-muted-foreground">
-                    3 active loans
+                    {loanPerformance.filter((l: any) => l.status === 'active').length} active loans
                   </p>
                 </CardContent>
               </Card>
@@ -401,7 +422,7 @@ export function Reports() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {((financialSummary.totalRepayments / financialSummary.totalLoansIssued) * 100).toFixed(1)}%
+                    {financialSummary.repaymentRate}%
                   </div>
                   <p className="text-xs text-muted-foreground">
                     On-time payments
@@ -416,7 +437,7 @@ export function Reports() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {formatCurrency(financialSummary.totalLoansIssued / loanPerformance.length)}
+                    {formatCurrency(financialSummary.averageLoanSize)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Per loan
@@ -447,14 +468,18 @@ export function Reports() {
                   </TableHeader>
                   <TableBody>
                     {monthlyData.map((data, index) => {
-                      const netChange = data.contributions + data.repayments - data.loans
+                      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                      const month = monthNames[data.month - 1] + ` ${data.year}`;
+
+                      const netChange = data.contributions + data.repayments - data.loans;
                       const previousNet = index > 0 ?
-                        monthlyData[index - 1].contributions + monthlyData[index - 1].repayments - monthlyData[index - 1].loans :
-                        netChange
+                        (monthlyData[index - 1].contributions + monthlyData[index - 1].repayments - monthlyData[index - 1].loans) :
+                        netChange;
 
                       return (
                         <TableRow key={index}>
-                          <TableCell className="font-medium">{data.month}</TableCell>
+                          <TableCell className="font-medium">{month}</TableCell>
                           <TableCell>{formatCurrency(data.contributions)}</TableCell>
                           <TableCell>{formatCurrency(data.loans)}</TableCell>
                           <TableCell>{formatCurrency(data.repayments)}</TableCell>
@@ -470,7 +495,7 @@ export function Reports() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      )
+                      );
                     })}
                   </TableBody>
                 </Table>
@@ -494,7 +519,7 @@ export function Reports() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-purple-600 rounded-full" />
-                      <span className="text-sm">Average member contribution: {formatCurrency(15000)}</span>
+                      <span className="text-sm">Average member contribution: {formatCurrency(financialSummary.averageContribution)}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-orange-600 rounded-full" />
