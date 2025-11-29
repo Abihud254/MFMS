@@ -8,10 +8,24 @@ import {
   TrendingUp,
   Calendar,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from 'sonner';
 
 export function Dashboard() {
   const [stats, setStats] = useState({
@@ -25,7 +39,7 @@ export function Dashboard() {
   const [recentActivities, setRecentActivities] = useState<any[]>([]); // New state for recent activities
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,6 +83,26 @@ export function Dashboard() {
       fetchData();
     }
   }, [user]);
+
+  const handleClearDatabase = async () => {
+    try {
+      const res = await fetch('https://mfms-1.onrender.com/api/admin/clear-database', {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Database cleared successfully. Please log in again.');
+        logout(); // Log out the user after clearing the database
+      } else {
+        toast.error(data.error || 'Failed to clear database');
+      }
+    } catch (err) {
+      toast.error('An error occurred while clearing the database');
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -142,6 +176,46 @@ export function Dashboard() {
           Welcome to your chama management dashboard
         </p>
       </div>
+
+      {user?.role === 'admin' && (
+        <Card className="border-red-500">
+          <CardHeader>
+            <CardTitle className="text-red-600">Admin Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold">Clear Database</h3>
+                <p className="text-sm text-muted-foreground">
+                  This will permanently delete all members, loans, contributions, and meetings. This action cannot be undone.
+                </p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Clear Database
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete all data from the database.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearDatabase}>
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

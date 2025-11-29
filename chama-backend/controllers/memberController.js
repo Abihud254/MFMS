@@ -9,10 +9,19 @@ export const getMembers = async (req, res) => {
   try {
     const members = await Member.find().sort({ createdAt: -1 });
 
+    // For each member, find the user
+    const membersWithUser = await Promise.all(members.map(async (member) => {
+      const user = await User.findOne({ member: member._id });
+      return {
+        ...member.toObject(),
+        user: user ? { _id: user._id, role: user.role } : null
+      };
+    }));
+
     res.status(200).json({
       success: true,
       count: members.length,
-      data: members
+      data: membersWithUser
     });
   } catch (error) {
     res.status(500).json({

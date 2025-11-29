@@ -17,6 +17,7 @@ import meetingRoutes from './routes/meetings.js';
 import notificationRoutes from './routes/notifications.js';
 import dashboardRoutes from './routes/dashboard.js';
 import reportsRoutes from './routes/reports.js';
+import adminRoutes from './routes/admin.js';
 
 // Load env vars
 dotenv.config();
@@ -77,6 +78,7 @@ app.use('/api/meetings', meetingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handler middleware
 app.use((err, req, res, next) => {

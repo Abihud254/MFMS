@@ -11,13 +11,17 @@ import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface Member {
-  _id: string
-  name: string
-  email: string
-  phone: string
-  joinDate: string
-  totalContributions: number
-  status: 'active' | 'inactive' | 'suspended'
+  _id: string;
+  name: string;
+  email: string;
+  phone: string;
+  joinDate: string;
+  totalContributions: number;
+  status: 'active' | 'inactive' | 'suspended';
+  user?: {
+    _id: string;
+    role: string;
+  };
 }
 
 export function Members() {
@@ -219,6 +223,21 @@ export function Members() {
                 <Phone className="h-4 w-4 mr-2" />
                 {member.phone}
               </div>
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { UserPlus } from 'lucide-react';
+
+// ... (rest of the component)
+
               <div className="pt-2 border-t">
                 <div className="text-sm">
                   <span className="text-muted-foreground">Total Contributions:</span>
@@ -231,6 +250,32 @@ export function Members() {
                   Joined: {new Date(member.joinDate).toLocaleDateString()}
                 </div>
               </div>
+              {user?.role === 'admin' && member.user && member.user.role !== 'admin' && (
+                <div className="pt-2 border-t">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Promote to Admin
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will promote {member.name} to an admin. This action can be reversed, but should be done with caution.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handlePromoteToAdmin(member.user._id)}>
+                          Promote
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
@@ -244,5 +289,191 @@ export function Members() {
         </Card>
       )}
     </div>
-  )
+  );
+}
+
+const handlePromoteToAdmin = async (userId: string) => {
+    try {
+      const res = await fetch(`https://mfms-1.onrender.com/api/admin/promote/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success(data.message);
+        // Update the local state to reflect the change
+        setMembers(members.map(m => {
+          if (m.user?._id === userId) {
+            return {
+              ...m,
+              user: {
+                ...m.user,
+                role: 'admin'
+              }
+            };
+          }
+          return m;
+        }));
+      } else {
+        toast.error(data.error || 'Failed to promote user');
+      }
+    } catch (err) {
+      toast.error('An error occurred while promoting the user');
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Members</h1>
+          <p className="text-muted-foreground">
+            Manage your chama members
+          </p>
+        </div>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Member
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Member</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  value={newMember.name}
+                  onChange={(e) => setNewMember({ ...newMember, name: e.target.value })}
+                  placeholder="Enter full name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newMember.email}
+                  onChange={(e) => setNewMember({ ...newMember, email: e.target.value })}
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  value={newMember.phone}
+                  onChange={(e) => setNewMember({ ...newMember, phone: e.target.value })}
+                  placeholder="+254700123456"
+                />
+              </div>
+              <Button onClick={handleAddMember} className="w-full">
+                Add Member
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search members..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Members Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredMembers.map((member) => (
+          <Card key={member._id}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center space-x-3">
+                <Avatar>
+                  <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <CardTitle className="text-lg">{member.name}</CardTitle>
+                  <Badge
+                    variant={member.status === 'active' ? 'default' : 'secondary'}
+                    className="mt-1"
+                  >
+                    {member.status}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Mail className="h-4 w-4 mr-2" />
+                {member.email}
+              </div>
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Phone className="h-4 w-4 mr-2" />
+                {member.phone}
+              </div>
+              <div className="pt-2 border-t">
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Total Contributions:</span>
+                  <br />
+                  <span className="font-semibold text-lg">
+                    {formatCurrency(member.totalContributions)}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Joined: {new Date(member.joinDate).toLocaleDateString()}
+                </div>
+              </div>
+              {user?.role === 'admin' && member.user && member.user.role !== 'admin' && (
+                <div className="pt-2 border-t">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Promote to Admin
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will promote {member.name} to an admin. This action can be reversed, but should be done with caution.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handlePromoteToAdmin(member.user._id)}>
+                          Promote
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredMembers.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-6">
+            <p className="text-muted-foreground">No members found</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
 }
