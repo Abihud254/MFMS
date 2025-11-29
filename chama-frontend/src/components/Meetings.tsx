@@ -1,91 +1,92 @@
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Calendar, Plus, Users, Clock, MapPin, Search } from 'lucide-react'
-import { toast } from 'sonner'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Plus, Users, Clock, MapPin, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Meeting {
-  id: number
-  title: string
-  date: string
-  time: string
-  location: string
-  agenda: string[]
-  status: 'upcoming' | 'completed' | 'cancelled'
-  attendees: number[]
-  attendeeNames: string[]
-  minutes?: string
-  decisions: string[]
+  _id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  agenda: string[];
+  status: 'upcoming' | 'completed' | 'cancelled';
+  attendees: string[];
+  minutes?: string;
+  decisions: string[];
+}
+
+interface Member {
+  _id: string;
+  name: string;
 }
 
 export function Meetings() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false)
-  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null)
-  const [isMinutesDialogOpen, setIsMinutesDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState<Meeting | null>(null);
+  const [isMinutesDialogOpen, setIsMinutesDialogOpen] = useState(false);
   const [newMeeting, setNewMeeting] = useState({
     title: '',
     date: '',
     time: '',
     location: '',
-    agenda: ''
-  })
+    agenda: '',
+  });
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { user } = useAuth();
 
-  const members = [
-    { id: 1, name: 'John Doe' },
-    { id: 2, name: 'Jane Smith' },
-    { id: 3, name: 'Mike Wilson' },
-    { id: 4, name: 'Sarah Johnson' },
-    { id: 5, name: 'David Brown' },
-    { id: 6, name: 'Lisa Davis' }
-  ]
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [meetingsRes, membersRes] = await Promise.all([
+          fetch('https://mfms-1.onrender.com/api/meetings', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+          fetch('https://mfms-1.onrender.com/api/members', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+        ]);
 
-  // Mock data
-  const [meetings, setMeetings] = useState<Meeting[]>([
-    {
-      id: 1,
-      title: 'Monthly Contributions Review',
-      date: '2025-07-05',
-      time: '10:00',
-      location: 'Community Center',
-      agenda: ['Review monthly contributions', 'Discuss loan applications', 'Plan investment strategy'],
-      status: 'upcoming',
-      attendees: [1, 2, 3, 4],
-      attendeeNames: ['John Doe', 'Jane Smith', 'Mike Wilson', 'Sarah Johnson'],
-      decisions: []
-    },
-    {
-      id: 2,
-      title: 'Quarterly Financial Review',
-      date: '2025-06-20',
-      time: '14:00',
-      location: 'Online Meeting',
-      agenda: ['Q2 financial summary', 'Investment performance review', 'Loan portfolio assessment'],
-      status: 'completed',
-      attendees: [1, 2, 3, 4, 5, 6],
-      attendeeNames: ['John Doe', 'Jane Smith', 'Mike Wilson', 'Sarah Johnson', 'David Brown', 'Lisa Davis'],
-      minutes: 'Discussed Q2 financial performance. Total savings increased by 15%. Approved 2 new loan applications. Decided to explore new investment opportunities in government bonds.',
-      decisions: ['Approve loans for Mike Wilson and Jane Smith', 'Invest 30% of surplus in government bonds', 'Increase monthly contribution to KES 20,000']
-    },
-    {
-      id: 3,
-      title: 'Emergency Planning Session',
-      date: '2025-06-15',
-      time: '16:00',
-      location: 'John\'s House',
-      agenda: ['Emergency fund policy', 'Member assistance guidelines', 'Communication protocols'],
-      status: 'completed',
-      attendees: [1, 3, 4, 5],
-      attendeeNames: ['John Doe', 'Mike Wilson', 'Sarah Johnson', 'David Brown'],
-      minutes: 'Established emergency fund policies and member assistance guidelines. Set up communication protocols for urgent matters.',
-      decisions: ['Set emergency fund at 20% of total savings', 'Create WhatsApp group for urgent communications']
+        const meetingsData = await meetingsRes.json();
+        const membersData = await membersRes.json();
+
+        if (meetingsData.success) {
+          setMeetings(meetingsData.data);
+        } else {
+          setError(meetingsData.error || 'Failed to fetch meetings');
+        }
+
+        if (membersData.success) {
+          setMembers(membersData.data);
+        } else {
+          setError(prev => prev + (prev ? ' and ' : '') + (membersData.error || 'Failed to fetch members'));
+        }
+      } catch (err: any) {
+        setError(prev => prev + (prev ? ' and ' : '') + (err.message || 'An error occurred while fetching data'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.token) {
+      fetchData();
     }
-  ])
+  }, [user]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -96,43 +97,62 @@ export function Meetings() {
     })
   }
 
-  const handleScheduleMeeting = () => {
+  const handleScheduleMeeting = async () => {
     if (!newMeeting.title || !newMeeting.date || !newMeeting.time || !newMeeting.location) {
-      toast.error('Please fill in all required fields')
-      return
+      toast.error('Please fill in all required fields');
+      return;
     }
 
-    const agendaItems = newMeeting.agenda.split('\n').filter(item => item.trim() !== '')
+    const agendaItems = newMeeting.agenda.split('\n').filter(item => item.trim() !== '');
 
-    const meeting: Meeting = {
-      id: Date.now(),
-      title: newMeeting.title,
-      date: newMeeting.date,
-      time: newMeeting.time,
-      location: newMeeting.location,
-      agenda: agendaItems,
-      status: 'upcoming',
-      attendees: [],
-      attendeeNames: [],
-      decisions: []
-    }
+    try {
+      const res = await fetch('https://mfms-1.onrender.com/api/meetings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({ ...newMeeting, agenda: agendaItems }),
+      });
 
-    setMeetings([meeting, ...meetings])
-    setNewMeeting({ title: '', date: '', time: '', location: '', agenda: '' })
-    setIsScheduleDialogOpen(false)
-    toast.success('Meeting scheduled successfully')
-  }
+      const data = await res.json();
 
-  const handleMeetingStatusChange = (meetingId: number, status: 'completed' | 'cancelled') => {
-    setMeetings(meetings.map(meeting => {
-      if (meeting.id === meetingId) {
-        return { ...meeting, status }
+      if (data.success) {
+        setMeetings([data.data, ...meetings]);
+        setNewMeeting({ title: '', date: '', time: '', location: '', agenda: '' });
+        setIsScheduleDialogOpen(false);
+        toast.success('Meeting scheduled successfully');
+      } else {
+        toast.error(data.error || 'Failed to schedule meeting');
       }
-      return meeting
-    }))
+    } catch (err) {
+      toast.error('An error occurred while scheduling the meeting');
+    }
+  };
 
-    toast.success(`Meeting ${status === 'completed' ? 'marked as completed' : 'cancelled'}`)
-  }
+  const handleMeetingStatusChange = async (meetingId: string, status: 'completed' | 'cancelled') => {
+    try {
+      const res = await fetch(`https://mfms-1.onrender.com/api/meetings/${meetingId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setMeetings(meetings.map(meeting => (meeting._id === meetingId ? data.data : meeting)));
+        toast.success(`Meeting ${status === 'completed' ? 'marked as completed' : 'cancelled'}`);
+      } else {
+        toast.error(data.error || `Failed to update meeting status`);
+      }
+    } catch (err) {
+      toast.error('An error occurred while updating the meeting status');
+    }
+  };
 
   const filteredMeetings = meetings.filter(meeting =>
     meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,32 +167,58 @@ export function Meetings() {
         .reduce((sum, m) => sum + m.attendees.length, 0) /
         meetings.filter(m => m.status === 'completed').length) : 0,
     totalDecisions: meetings.reduce((sum, m) => sum + m.decisions.length, 0)
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'upcoming':
-        return 'bg-blue-100 text-blue-800'
+        return 'bg-blue-100 text-blue-800';
       case 'completed':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       case 'cancelled':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'upcoming':
-        return <Clock className="h-4 w-4 text-blue-600" />
+        return <Clock className="h-4 w-4 text-blue-600" />;
       case 'completed':
-        return <Calendar className="h-4 w-4 text-green-600" />
+        return <Calendar className="h-4 w-4 text-green-600" />;
       case 'cancelled':
-        return <Calendar className="h-4 w-4 text-red-600" />
+        return <Calendar className="h-4 w-4 text-red-600" />;
       default:
-        return <Calendar className="h-4 w-4 text-gray-600" />
+        return <Calendar className="h-4 w-4 text-gray-600" />;
     }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-1/4" />
+        <div className="grid gap-4 md:grid-cols-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Alert variant="destructive" className="w-full max-w-md">
+          <AlertCircle className="h-5 w-5" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
@@ -329,7 +375,7 @@ export function Meetings() {
         <TabsContent value="upcoming">
           <div className="grid gap-4">
             {filteredMeetings.filter(meeting => meeting.status === 'upcoming').map((meeting) => (
-              <Card key={meeting.id}>
+              <Card key={meeting._id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
@@ -366,14 +412,14 @@ export function Meetings() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleMeetingStatusChange(meeting.id, 'completed')}
+                        onClick={() => handleMeetingStatusChange(meeting._id, 'completed')}
                       >
                         Mark as Completed
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        onClick={() => handleMeetingStatusChange(meeting.id, 'cancelled')}
+                        onClick={() => handleMeetingStatusChange(meeting._id, 'cancelled')}
                       >
                         Cancel Meeting
                       </Button>
@@ -395,7 +441,7 @@ export function Meetings() {
         <TabsContent value="completed">
           <div className="grid gap-4">
             {filteredMeetings.filter(meeting => meeting.status === 'completed').map((meeting) => (
-              <Card key={meeting.id}>
+              <Card key={meeting._id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
@@ -425,9 +471,9 @@ export function Meetings() {
                     <div>
                       <h4 className="font-medium mb-2">Attendees:</h4>
                       <div className="flex flex-wrap gap-2">
-                        {meeting.attendeeNames.map((name, index) => (
+                        {/* {meeting.attendeeNames.map((name, index) => (
                           <Badge key={index} variant="secondary">{name}</Badge>
-                        ))}
+                        ))} */}
                       </div>
                     </div>
 
@@ -460,7 +506,7 @@ export function Meetings() {
         <TabsContent value="all">
           <div className="grid gap-4">
             {filteredMeetings.map((meeting) => (
-              <Card key={meeting.id}>
+              <Card key={meeting._id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
@@ -517,14 +563,14 @@ export function Meetings() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleMeetingStatusChange(meeting.id, 'completed')}
+                          onClick={() => handleMeetingStatusChange(meeting._id, 'completed')}
                         >
                           Mark as Completed
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleMeetingStatusChange(meeting.id, 'cancelled')}
+                          onClick={() => handleMeetingStatusChange(meeting._id, 'cancelled')}
                         >
                           Cancel Meeting
                         </Button>

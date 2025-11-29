@@ -16,6 +16,7 @@ import loanRoutes from './routes/loans.js';
 import meetingRoutes from './routes/meetings.js';
 import notificationRoutes from './routes/notifications.js';
 import dashboardRoutes from './routes/dashboard.js';
+import reportsRoutes from './routes/reports.js';
 
 // Load env vars
 dotenv.config();
@@ -75,6 +76,7 @@ app.use('/api/loans', loanRoutes);
 app.use('/api/meetings', meetingRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Error handler middleware
 app.use((err, req, res, next) => {

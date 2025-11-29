@@ -1,80 +1,88 @@
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Plus, Calendar, Search } from 'lucide-react'
-import { toast } from 'sonner'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Calendar, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Contribution {
-  id: number
-  memberId: number
-  memberName: string
-  amount: number
-  date: string
-  type: 'monthly' | 'special'
-  status: 'completed' | 'pending'
+  _id: string;
+  member: {
+    _id: string;
+    name: string;
+  };
+  amount: number;
+  date: string;
+  type: 'monthly' | 'special';
+  status: 'completed' | 'pending';
+}
+
+interface Member {
+  _id: string;
+  name: string;
 }
 
 export function Contributions() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newContribution, setNewContribution] = useState({
-    memberId: '',
+    member: '',
     amount: '',
-    type: 'monthly' as 'monthly' | 'special'
-  })
+    type: 'monthly' as 'monthly' | 'special',
+  });
+  const [contributions, setContributions] = useState<Contribution[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { user } = useAuth();
 
-  // Mock data
-  const [contributions, setContributions] = useState<Contribution[]>([
-    {
-      id: 1,
-      memberId: 1,
-      memberName: 'John Doe',
-      amount: 15000,
-      date: '2025-06-25',
-      type: 'monthly',
-      status: 'completed'
-    },
-    {
-      id: 2,
-      memberId: 2,
-      memberName: 'Jane Smith',
-      amount: 15000,
-      date: '2025-06-20',
-      type: 'monthly',
-      status: 'completed'
-    },
-    {
-      id: 3,
-      memberId: 3,
-      memberName: 'Mike Wilson',
-      amount: 20000,
-      date: '2025-06-18',
-      type: 'special',
-      status: 'completed'
-    },
-    {
-      id: 4,
-      memberId: 4,
-      memberName: 'Sarah Johnson',
-      amount: 15000,
-      date: '2025-06-25',
-      type: 'monthly',
-      status: 'pending'
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [contributionsRes, membersRes] = await Promise.all([
+          fetch('https://mfms-1.onrender.com/api/contributions', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+          fetch('https://mfms-1.onrender.com/api/members', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+        ]);
+
+        const contributionsData = await contributionsRes.json();
+        const membersData = await membersRes.json();
+
+        if (contributionsData.success) {
+          setContributions(contributionsData.data);
+        } else {
+          setError(contributionsData.error || 'Failed to fetch contributions');
+        }
+
+        if (membersData.success) {
+          setMembers(membersData.data);
+        } else {
+          setError(prev => prev + (prev ? ' and ' : '') + (membersData.error || 'Failed to fetch members'));
+        }
+      } catch (err: any) {
+        setError(prev => prev + (prev ? ' and ' : '') + (err.message || 'An error occurred while fetching data'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.token) {
+      fetchData();
     }
-  ])
-
-  const members = [
-    { id: 1, name: 'John Doe' },
-    { id: 2, name: 'Jane Smith' },
-    { id: 3, name: 'Mike Wilson' },
-    { id: 4, name: 'Sarah Johnson' }
-  ]
+  }, [user]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -85,44 +93,47 @@ export function Contributions() {
   }
 
   const filteredContributions = contributions.filter(contribution =>
-    contribution.memberName.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+    contribution.member.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const totalContributions = contributions
     .filter(c => c.status === 'completed')
-    .reduce((sum, c) => sum + c.amount, 0)
+    .reduce((sum, c) => sum + c.amount, 0);
 
   const pendingContributions = contributions
     .filter(c => c.status === 'pending')
-    .reduce((sum, c) => sum + c.amount, 0)
+    .reduce((sum, c) => sum + c.amount, 0);
 
-  const handleAddContribution = () => {
-    if (!newContribution.memberId || !newContribution.amount) {
-      toast.error('Please fill in all fields')
-      return
+  const handleAddContribution = async () => {
+    if (!newContribution.member || !newContribution.amount) {
+      toast.error('Please fill in all fields');
+      return;
     }
 
-    const member = members.find(m => m.id === Number.parseInt(newContribution.memberId))
-    if (!member) {
-      toast.error('Invalid member selected')
-      return
-    }
+    try {
+      const res = await fetch('https://mfms-1.onrender.com/api/contributions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify(newContribution),
+      });
 
-    const contribution: Contribution = {
-      id: Date.now(),
-      memberId: Number.parseInt(newContribution.memberId),
-      memberName: member.name,
-      amount: Number.parseFloat(newContribution.amount),
-      date: new Date().toISOString().split('T')[0],
-      type: newContribution.type,
-      status: 'completed'
-    }
+      const data = await res.json();
 
-    setContributions([contribution, ...contributions])
-    setNewContribution({ memberId: '', amount: '', type: 'monthly' })
-    setIsAddDialogOpen(false)
-    toast.success('Contribution recorded successfully')
-  }
+      if (data.success) {
+        setContributions([data.data, ...contributions]);
+        setNewContribution({ member: '', amount: '', type: 'monthly' });
+        setIsAddDialogOpen(false);
+        toast.success('Contribution recorded successfully');
+      } else {
+        toast.error(data.error || 'Failed to record contribution');
+      }
+    } catch (err) {
+      toast.error('An error occurred while recording the contribution');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -147,15 +158,18 @@ export function Contributions() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="member">Member</Label>
-                <Select value={newContribution.memberId} onValueChange={(value) =>
-                  setNewContribution({ ...newContribution, memberId: value })
-                }>
+                <Select
+                  value={newContribution.member}
+                  onValueChange={(value) =>
+                    setNewContribution({ ...newContribution, member: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select member" />
                   </SelectTrigger>
                   <SelectContent>
                     {members.map((member) => (
-                      <SelectItem key={member.id} value={member.id.toString()}>
+                      <SelectItem key={member._id} value={member._id}>
                         {member.name}
                       </SelectItem>
                     ))}
@@ -168,15 +182,23 @@ export function Contributions() {
                   id="amount"
                   type="number"
                   value={newContribution.amount}
-                  onChange={(e) => setNewContribution({ ...newContribution, amount: e.target.value })}
+                  onChange={(e) =>
+                    setNewContribution({
+                      ...newContribution,
+                      amount: e.target.value,
+                    })
+                  }
                   placeholder="15000"
                 />
               </div>
               <div>
                 <Label htmlFor="type">Contribution Type</Label>
-                <Select value={newContribution.type} onValueChange={(value: 'monthly' | 'special') =>
-                  setNewContribution({ ...newContribution, type: value })
-                }>
+                <Select
+                  value={newContribution.type}
+                  onValueChange={(value: 'monthly' | 'special') =>
+                    setNewContribution({ ...newContribution, type: value })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -266,10 +288,27 @@ export function Contributions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredContributions.map((contribution) => (
-                <TableRow key={contribution.id}>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    <Skeleton className="w-full h-[25px]" />
+                    <Skeleton className="w-full h-[25px] mt-2" />
+                    <Skeleton className="w-full h-[25px] mt-2" />
+                  </TableCell>
+                </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-5 w-5" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  </TableCell>
+                </TableRow>
+              ) : filteredContributions.map((contribution) => (
+                <TableRow key={contribution._id}>
                   <TableCell className="font-medium">
-                    {contribution.memberName}
+                    {contribution.member.name}
                   </TableCell>
                   <TableCell>{formatCurrency(contribution.amount)}</TableCell>
                   <TableCell>{new Date(contribution.date).toLocaleDateString()}</TableCell>

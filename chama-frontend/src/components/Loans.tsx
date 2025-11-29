@@ -1,98 +1,98 @@
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, DollarSign, Clock, CheckCircle, XCircle, Search } from 'lucide-react'
-import { toast } from 'sonner'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, DollarSign, Clock, CheckCircle, XCircle, Search } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Loan {
-  id: number
-  memberId: number
-  memberName: string
-  amount: number
-  interestRate: number
-  termMonths: number
-  applicationDate: string
-  approvalDate?: string
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed'
-  monthlyPayment: number
-  totalRepaid: number
-  remainingBalance: number
-  nextPaymentDate: string
+  _id: string;
+  member: {
+    _id: string;
+    name: string;
+  };
+  amount: number;
+  interestRate: number;
+  termMonths: number;
+  applicationDate: string;
+  approvalDate?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'completed';
+  monthlyPayment: number;
+  totalRepaid: number;
+  remainingBalance: number;
+  nextPaymentDate: string;
+}
+
+interface Member {
+  _id: string;
+  name: string;
 }
 
 export function Loans() {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false)
-  const [isRepaymentDialogOpen, setIsRepaymentDialogOpen] = useState(false)
-  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
+  const [isRepaymentDialogOpen, setIsRepaymentDialogOpen] = useState(false);
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
   const [newApplication, setNewApplication] = useState({
-    memberId: '',
+    member: '',
     amount: '',
-    termMonths: '12'
-  })
-  const [repaymentAmount, setRepaymentAmount] = useState('')
+    termMonths: '12',
+  });
+  const [repaymentAmount, setRepaymentAmount] = useState('');
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { user } = useAuth();
 
-  const members = [
-    { id: 1, name: 'Abihud Ochieng' },
-    { id: 2, name: 'Phoebe Tawa' },
-    { id: 3, name: 'Jack Oloo' },
-    { id: 4, name: 'Johnson Owiti' }
-  ]
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [loansRes, membersRes] = await Promise.all([
+          fetch('https://mfms-1.onrender.com/api/loans', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+          fetch('https://mfms-1.onrender.com/api/members', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+        ]);
 
-  // Mock data
-  const [loans, setLoans] = useState<Loan[]>([
-    {
-      id: 1,
-      memberId: 2,
-      memberName: 'Phoebe Tawa',
-      amount: 50000,
-      interestRate: 10,
-      termMonths: 12,
-      applicationDate: '2025-06-01',
-      approvalDate: '2025-06-05',
-      status: 'active',
-      monthlyPayment: 4600,
-      totalRepaid: 18400,
-      remainingBalance: 31600,
-      nextPaymentDate: '2025-07-05'
-    },
-    {
-      id: 2,
-      memberId: 3,
-      memberName: 'Jack Oloo',
-      amount: 30000,
-      interestRate: 8,
-      termMonths: 6,
-      applicationDate: '2025-06-10',
-      approvalDate: '2025-06-12',
-      status: 'active',
-      monthlyPayment: 5400,
-      totalRepaid: 10800,
-      remainingBalance: 19200,
-      nextPaymentDate: '2025-07-10'
-    },
-    {
-      id: 3,
-      memberId: 1,
-      memberName: 'John Doe',
-      amount: 75000,
-      interestRate: 12,
-      termMonths: 18,
-      applicationDate: '2025-06-20',
-      status: 'pending',
-      monthlyPayment: 4800,
-      totalRepaid: 0,
-      remainingBalance: 75000,
-      nextPaymentDate: '2025-07-20'
+        const loansData = await loansRes.json();
+        const membersData = await membersRes.json();
+
+        if (loansData.success) {
+          setLoans(loansData.data);
+        } else {
+          setError(loansData.error || 'Failed to fetch loans');
+        }
+
+        if (membersData.success) {
+          setMembers(membersData.data);
+        } else {
+          setError(prev => prev + (prev ? ' and ' : '') + (membersData.error || 'Failed to fetch members'));
+        }
+      } catch (err: any) {
+        setError(prev => prev + (prev ? ' and ' : '') + (err.message || 'An error occurred while fetching data'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.token) {
+      fetchData();
     }
-  ])
+  }, [user]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -109,104 +109,103 @@ export function Loans() {
     return Math.round(payment)
   }
 
-  const handleLoanApplication = () => {
-    if (!newApplication.memberId || !newApplication.amount) {
-      toast.error('Please fill in all fields')
-      return
+  const handleLoanApplication = async () => {
+    if (!newApplication.member || !newApplication.amount) {
+      toast.error('Please fill in all fields');
+      return;
     }
 
-    const member = members.find(m => m.id === Number.parseInt(newApplication.memberId))
-    if (!member) {
-      toast.error('Invalid member selected')
-      return
-    }
+    try {
+      const res = await fetch('https://mfms-1.onrender.com/api/loans', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify(newApplication),
+      });
 
-    const amount = Number.parseFloat(newApplication.amount)
-    const termMonths = Number.parseInt(newApplication.termMonths)
-    const interestRate = 10 // Default 10%
-    const monthlyPayment = calculateMonthlyPayment(amount, interestRate, termMonths)
+      const data = await res.json();
 
-    const loan: Loan = {
-      id: Date.now(),
-      memberId: Number.parseInt(newApplication.memberId),
-      memberName: member.name,
-      amount,
-      interestRate,
-      termMonths,
-      applicationDate: new Date().toISOString().split('T')[0],
-      status: 'pending',
-      monthlyPayment,
-      totalRepaid: 0,
-      remainingBalance: amount,
-      nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-    }
-
-    setLoans([loan, ...loans])
-    setNewApplication({ memberId: '', amount: '', termMonths: '12' })
-    setIsApplicationDialogOpen(false)
-    toast.success('Loan application submitted successfully')
-  }
-
-  const handleLoanAction = (loanId: number, action: 'approve' | 'reject') => {
-    setLoans(loans.map(loan => {
-      if (loan.id === loanId) {
-        return {
-          ...loan,
-          status: action === 'approve' ? 'active' : 'rejected',
-          approvalDate: action === 'approve' ? new Date().toISOString().split('T')[0] : undefined
-        }
+      if (data.success) {
+        setLoans([data.data, ...loans]);
+        setNewApplication({ member: '', amount: '', termMonths: '12' });
+        setIsApplicationDialogOpen(false);
+        toast.success('Loan application submitted successfully');
+      } else {
+        toast.error(data.error || 'Failed to submit loan application');
       }
-      return loan
-    }))
+    } catch (err) {
+      toast.error('An error occurred while submitting the loan application');
+    }
+  };
 
-    toast.success(`Loan ${action === 'approve' ? 'approved' : 'rejected'} successfully`)
-  }
+  const handleLoanAction = async (loanId: string, action: 'approve' | 'reject') => {
+    try {
+      const res = await fetch(`https://mfms-1.onrender.com/api/loans/${loanId}/action`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({ action }),
+      });
 
-  const handleRepayment = () => {
+      const data = await res.json();
+
+      if (data.success) {
+        setLoans(loans.map(loan => (loan._id === loanId ? data.data : loan)));
+        toast.success(`Loan ${action}d successfully`);
+      } else {
+        toast.error(data.error || `Failed to ${action} loan`);
+      }
+    } catch (err) {
+      toast.error(`An error occurred while ${action}ing the loan`);
+    }
+  };
+
+  const handleRepayment = async () => {
     if (!selectedLoan || !repaymentAmount) {
-      toast.error('Please enter a valid repayment amount')
-      return
+      toast.error('Please enter a valid repayment amount');
+      return;
     }
 
-    const amount = Number.parseFloat(repaymentAmount)
-    if (amount > selectedLoan.remainingBalance) {
-      toast.error('Repayment amount cannot exceed remaining balance')
-      return
-    }
+    try {
+      const res = await fetch(`https://mfms-1.onrender.com/api/loans/${selectedLoan._id}/repayment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${user?.token}`,
+        },
+        body: JSON.stringify({ amount: repaymentAmount }),
+      });
 
-    setLoans(loans.map(loan => {
-      if (loan.id === selectedLoan.id) {
-        const newTotalRepaid = loan.totalRepaid + amount
-        const newRemainingBalance = loan.amount - newTotalRepaid
-        return {
-          ...loan,
-          totalRepaid: newTotalRepaid,
-          remainingBalance: newRemainingBalance,
-          status: newRemainingBalance <= 0 ? 'completed' : 'active',
-          nextPaymentDate: newRemainingBalance > 0 ?
-            new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] :
-            loan.nextPaymentDate
-        }
+      const data = await res.json();
+
+      if (data.success) {
+        setLoans(loans.map(loan => (loan._id === selectedLoan._id ? data.data : loan)));
+        setRepaymentAmount('');
+        setSelectedLoan(null);
+        setIsRepaymentDialogOpen(false);
+        toast.success('Repayment recorded successfully');
+      } else {
+        toast.error(data.error || 'Failed to record repayment');
       }
-      return loan
-    }))
-
-    setRepaymentAmount('')
-    setSelectedLoan(null)
-    setIsRepaymentDialogOpen(false)
-    toast.success('Repayment recorded successfully')
-  }
+    } catch (err) {
+      toast.error('An error occurred while recording the repayment');
+    }
+  };
 
   const filteredLoans = loans.filter(loan =>
-    loan.memberName.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+    loan.member.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const stats = {
     totalLoaned: loans.filter(l => l.status === 'active' || l.status === 'completed').reduce((sum, l) => sum + l.amount, 0),
     activeLoans: loans.filter(l => l.status === 'active').length,
     totalOutstanding: loans.filter(l => l.status === 'active').reduce((sum, l) => sum + l.remainingBalance, 0),
     pendingApplications: loans.filter(l => l.status === 'pending').length
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -263,15 +262,15 @@ export function Loans() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="member">Member</Label>
-                <Select value={newApplication.memberId} onValueChange={(value) =>
-                  setNewApplication({ ...newApplication, memberId: value })
+                <Select value={newApplication.member} onValueChange={(value) =>
+                  setNewApplication({ ...newApplication, member: value })
                 }>
                   <SelectTrigger>
                     <SelectValue placeholder="Select member" />
                   </SelectTrigger>
                   <SelectContent>
                     {members.map((member) => (
-                      <SelectItem key={member.id} value={member.id.toString()}>
+                      <SelectItem key={member._id} value={member._id}>
                         {member.name}
                       </SelectItem>
                     ))}
@@ -406,9 +405,25 @@ export function Loans() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredLoans.map((loan) => (
-                    <TableRow key={loan.id}>
-                      <TableCell className="font-medium">{loan.memberName}</TableCell>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        <Skeleton className="w-full h-[25px]" />
+                        <Skeleton className="w-full h-[25px] mt-2" />
+                      </TableCell>
+                    </TableRow>
+                  ) : error ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="h-24 text-center">
+                        <Alert variant="destructive">
+                          <AlertCircle className="h-5 w-5" />
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredLoans.map((loan) => (
+                    <TableRow key={loan._id}>
+                      <TableCell className="font-medium">{loan.member.name}</TableCell>
                       <TableCell>{formatCurrency(loan.amount)}</TableCell>
                       <TableCell>{loan.termMonths} months</TableCell>
                       <TableCell>{formatCurrency(loan.monthlyPayment)}</TableCell>
@@ -428,14 +443,14 @@ export function Loans() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => handleLoanAction(loan.id, 'approve')}
+                                onClick={() => handleLoanAction(loan._id, 'approve')}
                               >
                                 Approve
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => handleLoanAction(loan.id, 'reject')}
+                                onClick={() => handleLoanAction(loan._id, 'reject')}
                               >
                                 Reject
                               </Button>
@@ -481,8 +496,8 @@ export function Loans() {
                 </TableHeader>
                 <TableBody>
                   {filteredLoans.filter(loan => loan.status === 'pending').map((loan) => (
-                    <TableRow key={loan.id}>
-                      <TableCell className="font-medium">{loan.memberName}</TableCell>
+                    <TableRow key={loan._id}>
+                      <TableCell className="font-medium">{loan.member.name}</TableCell>
                       <TableCell>{formatCurrency(loan.amount)}</TableCell>
                       <TableCell>{loan.termMonths} months</TableCell>
                       <TableCell>{new Date(loan.applicationDate).toLocaleDateString()}</TableCell>
@@ -491,14 +506,14 @@ export function Loans() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleLoanAction(loan.id, 'approve')}
+                            onClick={() => handleLoanAction(loan._id, 'approve')}
                           >
                             Approve
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => handleLoanAction(loan.id, 'reject')}
+                            onClick={() => handleLoanAction(loan._id, 'reject')}
                           >
                             Reject
                           </Button>
@@ -531,8 +546,8 @@ export function Loans() {
                 </TableHeader>
                 <TableBody>
                   {filteredLoans.filter(loan => loan.status === 'active').map((loan) => (
-                    <TableRow key={loan.id}>
-                      <TableCell className="font-medium">{loan.memberName}</TableCell>
+                    <TableRow key={loan._id}>
+                      <TableCell className="font-medium">{loan.member.name}</TableCell>
                       <TableCell>{formatCurrency(loan.amount)}</TableCell>
                       <TableCell>{formatCurrency(loan.monthlyPayment)}</TableCell>
                       <TableCell>{formatCurrency(loan.remainingBalance)}</TableCell>
@@ -574,8 +589,8 @@ export function Loans() {
                 </TableHeader>
                 <TableBody>
                   {filteredLoans.filter(loan => loan.status === 'completed').map((loan) => (
-                    <TableRow key={loan.id}>
-                      <TableCell className="font-medium">{loan.memberName}</TableCell>
+                    <TableRow key={loan._id}>
+                      <TableCell className="font-medium">{loan.member.name}</TableCell>
                       <TableCell>{formatCurrency(loan.amount)}</TableCell>
                       <TableCell>{formatCurrency(loan.totalRepaid)}</TableCell>
                       <TableCell>{new Date(loan.nextPaymentDate).toLocaleDateString()}</TableCell>
@@ -597,7 +612,7 @@ export function Loans() {
           {selectedLoan && (
             <div className="space-y-4">
               <div className="bg-muted p-4 rounded-lg">
-                <p><strong>Member:</strong> {selectedLoan.memberName}</p>
+                <p><strong>Member:</strong> {selectedLoan.member.name}</p>
                 <p><strong>Loan Amount:</strong> {formatCurrency(selectedLoan.amount)}</p>
                 <p><strong>Remaining Balance:</strong> {formatCurrency(selectedLoan.remainingBalance)}</p>
                 <p><strong>Monthly Payment:</strong> {formatCurrency(selectedLoan.monthlyPayment)}</p>

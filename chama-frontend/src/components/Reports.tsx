@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   BarChart3,
   TrendingUp,
@@ -13,47 +13,62 @@ import {
   Users,
   Banknote,
   FileText,
-  PieChart
-} from 'lucide-react'
+  PieChart,
+  AlertCircle,
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function Reports() {
-  const [selectedPeriod, setSelectedPeriod] = useState('current-month')
+  const [selectedPeriod, setSelectedPeriod] = useState('current-month');
+  const [financialSummary, setFinancialSummary] = useState<any>({});
+  const [memberContributions, setMemberContributions] = useState<any[]>([]);
+  const [loanPerformance, setLoanPerformance] = useState<any[]>([]);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { user } = useAuth();
 
-  // Mock data for reports
-  const financialSummary = {
-    totalSavings: 450000,
-    totalContributions: 180000,
-    totalLoansIssued: 80000,
-    totalRepayments: 28400,
-    netCashFlow: 151600,
-    memberCount: 12,
-    averageContribution: 15000,
-    loanDefaultRate: 0
-  }
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [summaryRes, contributionsRes] = await Promise.all([
+          fetch('https://mfms-1.onrender.com/api/reports/financial-summary', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+          fetch('https://mfms-1.onrender.com/api/reports/contributions', {
+            headers: { Authorization: `Bearer ${user?.token}` },
+          }),
+        ]);
 
-  const monthlyData = [
-    { month: 'Jan 2025', contributions: 150000, loans: 25000, repayments: 8000 },
-    { month: 'Feb 2025', contributions: 165000, loans: 30000, repayments: 12000 },
-    { month: 'Mar 2025', contributions: 170000, loans: 20000, repayments: 15000 },
-    { month: 'Apr 2025', contributions: 175000, loans: 0, repayments: 18000 },
-    { month: 'May 2025', contributions: 180000, loans: 15000, repayments: 20000 },
-    { month: 'Jun 2025', contributions: 180000, loans: 50000, repayments: 28400 }
-  ]
+        const summaryData = await summaryRes.json();
+        const contributionsData = await contributionsRes.json();
 
-  const memberContributions = [
-    { name: 'John Doe', totalContributions: 75000, monthlyAverage: 15000, status: 'up-to-date' },
-    { name: 'Jane Smith', totalContributions: 60000, monthlyAverage: 15000, status: 'up-to-date' },
-    { name: 'Mike Wilson', totalContributions: 90000, monthlyAverage: 18000, status: 'up-to-date' },
-    { name: 'Sarah Johnson', totalContributions: 45000, monthlyAverage: 12000, status: 'behind' },
-    { name: 'David Brown', totalContributions: 67500, monthlyAverage: 15000, status: 'up-to-date' },
-    { name: 'Lisa Davis', totalContributions: 52500, monthlyAverage: 15000, status: 'up-to-date' }
-  ]
+        if (summaryData.success) {
+          setFinancialSummary(summaryData.data);
+        } else {
+          setError(summaryData.error || 'Failed to fetch financial summary');
+        }
 
-  const loanPerformance = [
-    { member: 'Jane Smith', amount: 50000, outstanding: 31600, status: 'current', nextPayment: '2025-07-05' },
-    { member: 'Mike Wilson', amount: 30000, outstanding: 19200, status: 'current', nextPayment: '2025-07-10' },
-    { member: 'John Doe', amount: 75000, outstanding: 75000, status: 'pending', nextPayment: 'N/A' }
-  ]
+        if (contributionsData.success) {
+          setMemberContributions(contributionsData.data);
+        } else {
+          setError(prev => prev + (prev ? ' and ' : '') + (contributionsData.error || 'Failed to fetch member contributions'));
+        }
+      } catch (err: any) {
+        setError(prev => prev + (prev ? ' and ' : '') + (err.message || 'An error occurred while fetching reports data'));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user?.token) {
+      fetchData();
+    }
+  }, [user]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -67,26 +82,52 @@ export function Reports() {
     switch (status) {
       case 'up-to-date':
       case 'current':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-100 text-green-800';
       case 'behind':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-100 text-red-800';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-100 text-gray-800';
     }
-  }
+  };
 
   const handleExportReport = (reportType: string) => {
     // In a real application, this would generate and download a PDF/Excel file
-    console.log(`Exporting ${reportType} report...`)
+    console.log(`Exporting ${reportType} report...`);
     // For demo purposes, just show a toast
-    alert(`${reportType} report would be downloaded as PDF/Excel`)
-  }
+    alert(`${reportType} report would be downloaded as PDF/Excel`);
+  };
 
   const calculateGrowthRate = (current: number, previous: number) => {
-    if (previous === 0) return '0.0'
-    return ((current - previous) / previous * 100).toFixed(1)
+    if (previous === 0) return '0.0';
+    return (((current - previous) / previous) * 100).toFixed(1);
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-1/4" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+          <Skeleton className="h-32" />
+        </div>
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Alert variant="destructive" className="w-full max-w-md">
+          <AlertCircle className="h-5 w-5" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
@@ -277,7 +318,7 @@ export function Reports() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {((member.totalContributions / memberContributions.reduce((sum, m) => sum + m.totalContributions, 0)) * 100).toFixed(1)}%
+                        {((member.totalContributions / financialSummary.totalContributions) * 100).toFixed(1)}%
                       </TableCell>
                     </TableRow>
                   ))}

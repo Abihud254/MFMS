@@ -37,8 +37,7 @@ export function Members() {
 
   const fetchMembers = async () => {
     try {
-      const res = await fetch('/api/members', {
-        headers: {
+      const res = await fetch('https://mfms-1.onrender.com/api/members', {
           'Authorization': `Bearer ${user?.token}`
         }
       })
@@ -77,7 +76,7 @@ export function Members() {
     }
 
     try {
-      const res = await fetch('/api/members', {
+      const res = await fetch('https://mfms-1.onrender.com/api/members', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +102,7 @@ export function Members() {
 
   const handleDeleteMember = async (id: string) => {
     try {
-      const res = await fetch(`/api/members/${id}`, {
+      const res = await fetch(`https://mfms-1.onrender.com/api/members/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user?.token}`
