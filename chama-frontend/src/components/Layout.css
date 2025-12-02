@@ -1,0 +1,36 @@
+.layout {
+  display: flex;
+  padding-top: 60px;
+}
+
+.content {
+  flex-grow: 1;
+  padding: 20px;
+}
+
+.menu-icon {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 1100;
+  display: block;
+}
+
+.menu-icon img {
+  width: 30px;
+  height: 30px;
+}
+
+@media (min-width: 768px) {
+  .menu-icon {
+    display: none;
+  }
+
+  .layout {
+    padding-left: 250px;
+    padding-top: 0;
+  }
+}
