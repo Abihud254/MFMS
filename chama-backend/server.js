@@ -17,10 +17,7 @@ app.use(cors());
 // Connect to MongoDB
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('MongoDB Connected...');
   } catch (err) {
     console.error(err.message);
@@ -30,6 +27,28 @@ const connectDB = async () => {
 };
 
 connectDB();
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const dashboardRoutes = require('./routes/dashboard');
+const memberRoutes = require('./routes/members');
+const loanRoutes = require('./routes/loans');
+const shareRoutes = require('./routes/shares');
+const meetingRoutes = require('./routes/meetings');
+const notificationRoutes = require('./routes/notifications');
+const reportRoutes = require('./routes/reports');
+const adminRoutes = require('./routes/admin');
+
+// Use routes
+app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/members', memberRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/api/shares', shareRoutes);
+app.use('/api/meetings', meetingRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/', (req, res) => {
     res.send('API is running...');

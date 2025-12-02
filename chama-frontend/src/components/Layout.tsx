@@ -14,7 +14,7 @@ const Layout = ({ children }: { children?: React.ReactNode }) => {
       <button className="menu-icon" onClick={toggleSidebar}>
         <img src="/menu-icon.png" alt="Menu" />
       </button>
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <div className="content">
         {children}
       </div>
