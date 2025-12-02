@@ -47,6 +47,7 @@ export function Meetings() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useAuth();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,10 +55,10 @@ export function Meetings() {
       setError('');
       try {
         const [meetingsRes, membersRes] = await Promise.all([
-          fetch('https://mfms-1.onrender.com/api/meetings', {
+          fetch(`${apiUrl}/api/meetings`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
-          fetch('https://mfms-1.onrender.com/api/members', {
+          fetch(`${apiUrl}/api/members`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
         ]);
@@ -106,7 +107,7 @@ export function Meetings() {
     const agendaItems = newMeeting.agenda.split('\n').filter(item => item.trim() !== '');
 
     try {
-      const res = await fetch('https://mfms-1.onrender.com/api/meetings', {
+      const res = await fetch(`${apiUrl}/api/meetings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,7 +133,7 @@ export function Meetings() {
 
   const handleMeetingStatusChange = async (meetingId: string, status: 'completed' | 'cancelled') => {
     try {
-      const res = await fetch(`https://mfms-1.onrender.com/api/meetings/${meetingId}/status`, {
+      const res = await fetch(`${apiUrl}/api/meetings/${meetingId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

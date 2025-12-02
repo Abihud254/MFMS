@@ -53,6 +53,7 @@ export function Loans() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useAuth();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,10 +61,10 @@ export function Loans() {
       setError('');
       try {
         const [loansRes, membersRes] = await Promise.all([
-          fetch('https://mfms-1.onrender.com/api/loans', {
+          fetch(`${apiUrl}/api/loans`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
-          fetch('https://mfms-1.onrender.com/api/members', {
+          fetch(`${apiUrl}/api/members`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
         ]);
@@ -116,7 +117,7 @@ export function Loans() {
     }
 
     try {
-      const res = await fetch('https://mfms-1.onrender.com/api/loans', {
+      const res = await fetch(`${apiUrl}/api/loans`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +143,7 @@ export function Loans() {
 
   const handleLoanAction = async (loanId: string, action: 'approve' | 'reject') => {
     try {
-      const res = await fetch(`https://mfms-1.onrender.com/api/loans/${loanId}/action`, {
+      const res = await fetch(`${apiUrl}/api/loans/${loanId}/action`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -171,7 +172,7 @@ export function Loans() {
     }
 
     try {
-      const res = await fetch(`https://mfms-1.onrender.com/api/loans/${selectedLoan._id}/repayment`, {
+      const res = await fetch(`${apiUrl}/api/loans/${selectedLoan._id}/repayment`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

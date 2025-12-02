@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { Members } from '@/components/Members';
@@ -10,49 +10,28 @@ import { Reports } from '@/components/Reports';
 import { Toaster } from '@/components/ui/sonner';
 import { Login } from '@/components/Login';
 import { Register } from '@/components/Register';
-import { ForgotPassword } from '@/components/ForgotPassword'; // Import the new component
-import { ResetPassword } from '@/components/ResetPassword'; // Import the new component
-import { EmailVerification } from '@/components/EmailVerification'; // Import the new component
+import { ForgotPassword } from '@/components/ForgotPassword';
+import { ResetPassword } from '@/components/ResetPassword';
+import { EmailVerification } from '@/components/EmailVerification';
 import { useAuth } from '@/contexts/AuthContext';
-import { useState } from 'react';
-
-type Page = 'dashboard' | 'members' | 'contributions' | 'loans' | 'meetings' | 'reports';
 
 const AppContent = () => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
-  const [activePage, setActivePage] = useState<Page>('dashboard');
-
-  const renderPage = () => {
-    switch (activePage) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'members':
-        return <Members />;
-      case 'contributions':
-        return <Contributions />;
-      case 'loans':
-        return <Loans />;
-      case 'meetings':
-        return <Meetings />;
-      case 'reports':
-        return <Reports />;
-      default:
-        return <Dashboard />;
-    }
-  };
+  const { isMobile } = useSidebar();
 
   if (isLoading) {
     return <div>Loading...</div>; // Or a loading spinner
   }
 
-  // Redirect unauthenticated users to login, but allow access to /forgot-password, /register, /reset-password and /verifyemail
-  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password/:token', '/verifyemail/:token'];
-  if (!user && !publicPaths.some(path => location.pathname.startsWith(path.replace('/:token', '')))) {
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verifyemail'];
+  const isPublicPath = publicPaths.some(path => location.pathname.startsWith(path));
+
+  if (!user && !isPublicPath) {
     return <Navigate to="/login" />;
   }
 
-  if (user && publicPaths.some(path => location.pathname.startsWith(path.replace('/:token', '')))) {
+  if (user && isPublicPath) {
     return <Navigate to="/" />;
   }
 
@@ -61,15 +40,28 @@ const AppContent = () => {
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex h-screen w-full">
-        <AppSidebar activePage={activePage} onPageChange={setActivePage} />
-        <main className="flex-1 overflow-auto bg-background">
-          <div className="container mx-auto p-6">{renderPage()}</div>
-        </main>
-      </div>
+    <div className="flex h-screen w-full">
+      <AppSidebar />
+      <main className="flex-1 overflow-auto bg-background">
+        {isMobile && (
+          <header className="flex items-center justify-between border-b bg-card p-4">
+            <div>{/* You can add a logo or page title here */}</div>
+            <SidebarTrigger />
+          </header>
+        )}
+        <div className="container mx-auto p-6">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/members" element={<Members />} />
+            <Route path="/contributions" element={<Contributions />} />
+            <Route path="/loans" element={<Loans />} />
+            <Route path="/meetings" element={<Meetings />} />
+            <Route path="/reports" element={<Reports />} />
+          </Routes>
+        </div>
+      </main>
       <Toaster />
-    </SidebarProvider>
+    </div>
   );
 };
 
@@ -80,7 +72,7 @@ function App() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
-      <Route path="/verifyemail/:token" element={<EmailVerification />} /> {/* New route */}
+      <Route path="/verifyemail/:token" element={<EmailVerification />} />
       <Route path="/*" element={<AppContent />} />
     </Routes>
   );

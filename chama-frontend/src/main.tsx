@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import App from "./App";
 import "./index.css";
 
@@ -12,7 +13,9 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <BrowserRouter>
     <AuthProvider>
-      <App />
+      <SidebarProvider>
+        <App />
+      </SidebarProvider>
     </AuthProvider>
   </BrowserRouter>
 );

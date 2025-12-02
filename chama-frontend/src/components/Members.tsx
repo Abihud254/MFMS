@@ -45,6 +45,7 @@ export function Members() {
   });
   const [members, setMembers] = useState<Member[]>([]);
   const { user } = useAuth();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     fetchMembers();
@@ -52,7 +53,7 @@ export function Members() {
 
   const fetchMembers = async () => {
     try {
-      const res = await fetch('https://mfms-1.onrender.com/api/members', {
+      const res = await fetch(`${apiUrl}/api/members`, {
         headers: {
           'Authorization': `Bearer ${user?.token}`
         }
@@ -93,7 +94,7 @@ export function Members() {
     }
 
     try {
-      const res = await fetch('https://mfms-1.onrender.com/api/members', {
+      const res = await fetch(`${apiUrl}/api/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ export function Members() {
 
   const handleDeleteMember = async (id: string) => {
     try {
-      const res = await fetch(`https://mfms-1.onrender.com/api/members/${id}`, {
+      const res = await fetch(`${apiUrl}/api/members/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${user?.token}`
@@ -141,7 +142,7 @@ export function Members() {
 
   const handlePromoteToAdmin = async (userId: string) => {
     try {
-      const res = await fetch(`https://mfms-1.onrender.com/api/admin/promote/${userId}`, {
+      const res = await fetch(`${apiUrl}/api/admin/promote/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

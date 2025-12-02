@@ -40,6 +40,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user, logout } = useAuth();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -47,7 +48,7 @@ export function Dashboard() {
       setError('');
       try {
         // Fetch dashboard stats
-        const statsRes = await fetch('https://mfms-1.onrender.com/api/dashboard', {
+        const statsRes = await fetch(`${apiUrl}/api/dashboard`, {
           headers: {
             Authorization: `Bearer ${user?.token}`,
           },
@@ -60,7 +61,7 @@ export function Dashboard() {
         }
 
         // Fetch recent activities
-        const activitiesRes = await fetch('https://mfms-1.onrender.com/api/dashboard/recent-activities', {
+        const activitiesRes = await fetch(`${apiUrl}/api/dashboard/recent-activities`, {
           headers: {
             Authorization: `Bearer ${user?.token}`,
           },
@@ -86,7 +87,7 @@ export function Dashboard() {
 
   const handleClearDatabase = async () => {
     try {
-      const res = await fetch('https://mfms-1.onrender.com/api/admin/clear-database', {
+      const res = await fetch(`${apiUrl}/api/admin/clear-database`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${user?.token}`,

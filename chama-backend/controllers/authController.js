@@ -165,7 +165,7 @@ export const forgotPassword = async (req, res) => {
 
     // Create reset URL
     // Frontend URL for reset password. User needs to replace this with the actual frontend URL.
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawResetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
 

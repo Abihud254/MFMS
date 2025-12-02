@@ -1,6 +1,7 @@
 import Member from '../models/Member.js';
 import Contribution from '../models/Contribution.js';
 import Loan from '../models/Loan.js';
+import User from '../models/User.js';
 
 // @desc    Get all members
 // @route   GET /api/members

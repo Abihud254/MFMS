@@ -1,4 +1,5 @@
-import React from 'react'
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import {
   Home,
   Users,
@@ -7,7 +8,7 @@ import {
   Calendar,
   BarChart3,
   PiggyBank
-} from 'lucide-react'
+} from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -19,49 +20,48 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar'
+} from '@/components/ui/sidebar';
 
-type Page = 'dashboard' | 'members' | 'contributions' | 'loans' | 'meetings' | 'reports'
-
-interface AppSidebarProps {
-  activePage: Page
-  onPageChange: (page: Page) => void
+interface MenuItem {
+  title: string;
+  icon: React.ComponentType<any>;
+  path: string;
 }
 
-const menuItems: { title: string; icon: React.ComponentType<any>; page: Page }[] = [
+const menuItems: MenuItem[] = [
   {
     title: 'Dashboard',
     icon: Home,
-    page: 'dashboard' as Page,
+    path: '/',
   },
   {
     title: 'Members',
     icon: Users,
-    page: 'members' as Page,
+    path: '/members',
   },
   {
     title: 'Contributions',
     icon: DollarSign,
-    page: 'contributions' as Page,
+    path: '/contributions',
   },
   {
     title: 'Loans',
     icon: Banknote,
-    page: 'loans' as Page,
+    path: '/loans',
   },
   {
     title: 'Meetings',
     icon: Calendar,
-    page: 'meetings' as Page,
+    path: '/meetings',
   },
   {
     title: 'Reports',
     icon: BarChart3,
-    page: 'reports' as Page,
+    path: '/reports',
   },
-]
+];
 
-export function AppSidebar({ activePage, onPageChange }: AppSidebarProps) {
+export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
@@ -79,18 +79,19 @@ export function AppSidebar({ activePage, onPageChange }: AppSidebarProps) {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
-                const Icon = item.icon
+                const Icon = item.icon;
                 return (
-                  <SidebarMenuItem key={item.page}>
-                    <SidebarMenuButton
-                      isActive={activePage === item.page}
-                      onClick={() => onPageChange(item.page)}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </SidebarMenuButton>
+                  <SidebarMenuItem key={item.path}>
+                    <NavLink to={item.path} end>
+                      {({ isActive }) => (
+                        <SidebarMenuButton isActive={isActive}>
+                          <Icon className="h-4 w-4" />
+                          <span>{item.title}</span>
+                        </SidebarMenuButton>
+                      )}
+                    </NavLink>
                   </SidebarMenuItem>
-                )
+                );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -102,5 +103,5 @@ export function AppSidebar({ activePage, onPageChange }: AppSidebarProps) {
         </div>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

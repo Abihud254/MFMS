@@ -29,6 +29,7 @@ export function Reports() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useAuth();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,16 +37,16 @@ export function Reports() {
       setError('');
       try {
         const [summaryRes, contributionsRes, loanPerformanceRes, trendsRes] = await Promise.all([
-          fetch('https://mfms-1.onrender.com/api/reports/financial-summary', {
+          fetch(`${apiUrl}/api/reports/financial-summary`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
-          fetch('https://mfms-1.onrender.com/api/reports/contributions', {
+          fetch(`${apiUrl}/api/reports/contributions`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
-          fetch('https://mfms-1.onrender.com/api/reports/loan-performance', {
+          fetch(`${apiUrl}/api/reports/loan-performance`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
-          fetch('https://mfms-1.onrender.com/api/reports/trends', {
+          fetch(`${apiUrl}/api/reports/trends`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
         ]);
