@@ -40,9 +40,9 @@ const menuItems: MenuItem[] = [
     path: '/members',
   },
   {
-    title: 'Contributions',
+    title: 'Shares',
     icon: DollarSign,
-    path: '/contributions',
+    path: '/shares',
   },
   {
     title: 'Loans',

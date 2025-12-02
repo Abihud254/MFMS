@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const contributionSchema = new mongoose.Schema({
+const shareSchema = new mongoose.Schema({
   member: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Member',
@@ -8,7 +8,7 @@ const contributionSchema = new mongoose.Schema({
   },
   amount: {
     type: Number,
-    required: [true, 'Please add contribution amount'],
+    required: [true, 'Please add share amount'],
     min: 0
   },
   date: {
@@ -45,9 +45,9 @@ const contributionSchema = new mongoose.Schema({
 });
 
 // Index for faster queries
-contributionSchema.index({ member: 1, date: -1 });
-contributionSchema.index({ status: 1 });
+shareSchema.index({ member: 1, date: -1 });
+shareSchema.index({ status: 1 });
 
-const Contribution = mongoose.model('Contribution', contributionSchema);
+const Share = mongoose.model('Share', shareSchema);
 
-export default Contribution;
+export default Share;

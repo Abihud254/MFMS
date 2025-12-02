@@ -3,7 +3,7 @@ import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Dashboard } from '@/components/Dashboard';
 import { Members } from '@/components/Members';
-import { Contributions } from '@/components/Contributions';
+import { Shares } from '@/components/Shares';
 import { Loans } from '@/components/Loans';
 import { Meetings } from '@/components/Meetings';
 import { Reports } from '@/components/Reports';
@@ -53,7 +53,7 @@ const AppContent = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/members" element={<Members />} />
-            <Route path="/contributions" element={<Contributions />} />
+            <Route path="/shares" element={<Shares />} />
             <Route path="/loans" element={<Loans />} />
             <Route path="/meetings" element={<Meetings />} />
             <Route path="/reports" element={<Reports />} />

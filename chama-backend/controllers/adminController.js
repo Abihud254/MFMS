@@ -1,6 +1,6 @@
 import Member from '../models/Member.js';
 import Loan from '../models/Loan.js';
-import Contribution from '../models/Contribution.js';
+import Share from '../models/Share.js';
 import Meeting from '../models/Meeting.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
@@ -13,7 +13,7 @@ export const clearDatabase = async (req, res) => {
     // Be very careful with this! This will wipe almost everything!
     await Member.deleteMany({});
     await Loan.deleteMany({});
-    await Contribution.deleteMany({});
+    await Share.deleteMany({});
     await Meeting.deleteMany({});
     await Notification.deleteMany({});
 

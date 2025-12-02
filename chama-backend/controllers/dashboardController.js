@@ -1,6 +1,6 @@
 import Member from '../models/Member.js';
 import Loan from '../models/Loan.js';
-import Contribution from '../models/Contribution.js';
+import Share from '../models/Share.js';
 import Meeting from '../models/Meeting.js';
 
 // @desc    Get dashboard stats
@@ -10,7 +10,7 @@ export const getDashboardStats = async (req, res) => {
   try {
     const totalMembers = await Member.countDocuments();
 
-    const totalSavingsResult = await Contribution.aggregate([
+    const totalSavingsResult = await Share.aggregate([
       { $match: { status: 'completed' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
@@ -26,7 +26,7 @@ export const getDashboardStats = async (req, res) => {
 
     const nextMeeting = await Meeting.findOne({ status: 'upcoming' }).sort({ date: 1 });
 
-    const pendingContributions = await Contribution.countDocuments({ status: 'pending' });
+    const pendingShares = await Share.countDocuments({ status: 'pending' });
 
     res.status(200).json({
       success: true,
@@ -36,7 +36,7 @@ export const getDashboardStats = async (req, res) => {
         activeLoans,
         totalLoaned,
         nextMeeting: nextMeeting ? nextMeeting.date : null,
-        pendingContributions
+        pendingShares
       }
     });
   } catch (error) {
@@ -54,8 +54,8 @@ export const getRecentActivities = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10; // Get limit from query, default to 10
 
-    // Fetch recent contributions
-    const contributions = await Contribution.find()
+    // Fetch recent shares
+    const shares = await Share.find()
       .populate('member', 'name')
       .sort({ date: -1 })
       .limit(limit);
@@ -72,9 +72,9 @@ export const getRecentActivities = async (req, res) => {
       .limit(limit);
 
     // Format activities
-    const formattedContributions = contributions.map(c => ({
+    const formattedShares = shares.map(c => ({
       id: c._id,
-      type: 'contribution',
+      type: 'share',
       member: c.member ? c.member.name : 'N/A',
       amount: c.amount,
       date: c.date,
@@ -100,7 +100,7 @@ export const getRecentActivities = async (req, res) => {
 
     // Combine and sort all activities
     const allActivities = [
-      ...formattedContributions,
+      ...formattedShares,
       ...formattedLoans,
       ...formattedMeetings
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())

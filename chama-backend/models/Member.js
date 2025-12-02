@@ -27,7 +27,7 @@ const memberSchema = new mongoose.Schema({
     enum: ['active', 'inactive', 'suspended'],
     default: 'active'
   },
-  totalContributions: {
+  totalShares: {
     type: Number,
     default: 0
   },
@@ -55,9 +55,9 @@ const memberSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual for contributions
-memberSchema.virtual('contributions', {
-  ref: 'Contribution',
+// Virtual for shares
+memberSchema.virtual('shares', {
+  ref: 'Share',
   localField: '_id',
   foreignField: 'member',
   justOne: false

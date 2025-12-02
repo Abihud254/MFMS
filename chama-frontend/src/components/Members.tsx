@@ -27,7 +27,7 @@ interface Member {
   email: string;
   phone: string;
   joinDate: string;
-  totalContributions: number;
+  totalShares: number;
   status: 'active' | 'inactive' | 'suspended';
   user?: {
     _id: string;
@@ -262,10 +262,10 @@ export function Members() {
               </div>
               <div className="pt-2 border-t">
                 <div className="text-sm">
-                  <span className="text-muted-foreground">Total Contributions:</span>
+                  <span className="text-muted-foreground">Total Shares:</span>
                   <br />
                   <span className="font-semibold text-lg">
-                    {formatCurrency(member.totalContributions)}
+                    {formatCurrency(member.totalShares)}
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">

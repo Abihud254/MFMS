@@ -43,9 +43,9 @@ const notificationSchema = new mongoose.Schema({
     default: 'sms'
   },
   metadata: {
-    contributionId: {
+    shareId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Contribution'
+      ref: 'Share'
     },
     loanId: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,6 +1,6 @@
 import Member from '../models/Member.js';
 import Loan from '../models/Loan.js';
-import Contribution from '../models/Contribution.js';
+import Share from '../models/Share.js';
 
 // @desc    Get financial summary report
 // @route   GET /api/reports/financial-summary
@@ -9,17 +9,17 @@ export const getFinancialSummary = async (req, res) => {
   try {
     const memberCount = await Member.countDocuments();
 
-    const totalSavingsResult = await Contribution.aggregate([
+    const totalSavingsResult = await Share.aggregate([
       { $match: { status: 'completed' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
     const totalSavings = totalSavingsResult.length > 0 ? totalSavingsResult[0].total : 0;
 
-    const totalContributionsResult = await Contribution.aggregate([
+    const totalSharesResult = await Share.aggregate([
       { $match: { status: 'completed' } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]);
-    const totalContributions = totalContributionsResult.length > 0 ? totalContributionsResult[0].total : 0;
+    const totalShares = totalSharesResult.length > 0 ? totalSharesResult[0].total : 0;
 
     const totalLoansIssuedResult = await Loan.aggregate([
       { $match: { status: { $in: ['active', 'completed'] } } },
@@ -32,9 +32,9 @@ export const getFinancialSummary = async (req, res) => {
     ]);
     const totalRepayments = totalRepaymentsResult.length > 0 ? totalRepaymentsResult[0].total : 0;
     
-    const netCashFlow = totalContributions - totalLoansIssued;
+    const netCashFlow = totalShares - totalLoansIssued;
     
-    const averageContribution = memberCount > 0 ? totalContributions / memberCount : 0;
+    const averageShare = memberCount > 0 ? totalShares / memberCount : 0;
 
     const defaultedLoans = await Loan.countDocuments({ status: 'defaulted' });
     const totalLoans = await Loan.countDocuments();
@@ -44,12 +44,9 @@ export const getFinancialSummary = async (req, res) => {
       success: true,
       data: {
         totalSavings,
-        totalContributions,
-        totalLoansIssued,
-        totalRepayments,
-        netCashFlow,
-        memberCount,
-        averageContribution,
+        totalShares,
+//...
+        averageShare,
         loanDefaultRate
       }
     });
@@ -102,18 +99,18 @@ export const getLoanPerformanceReport = async (req, res) => {
   }
 };
 
-// @desc    Get contribution report
-// @route   GET /api/reports/contributions
+// @desc    Get share report
+// @route   GET /api/reports/shares
 // @access  Private
-export const getContributionReport = async (req, res) => {
+export const getShareReport = async (req, res) => {
     try {
-        const memberContributions = await Contribution.aggregate([
+        const memberShares = await Share.aggregate([
             { $match: { status: 'completed' } },
             {
                 $group: {
                     _id: '$member',
-                    totalContributions: { $sum: '$amount' },
-                    contributionsCount: { $sum: 1 }
+                    totalShares: { $sum: '$amount' },
+                    sharesCount: { $sum: 1 }
                 }
             },
             {
@@ -131,8 +128,8 @@ export const getContributionReport = async (req, res) => {
                 $project: {
                     _id: 0,
                     name: '$member.name',
-                    totalContributions: '$totalContributions',
-                    monthlyAverage: { $divide: ['$totalContributions', '$contributionsCount'] },
+                    totalShares: '$totalShares',
+                    monthlyAverage: { $divide: ['$totalShares', '$sharesCount'] },
                     status: 'up-to-date' // Placeholder status
                 }
             }
@@ -140,7 +137,7 @@ export const getContributionReport = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: memberContributions
+            data: memberShares
         });
     } catch (error) {
         res.status(500).json({
@@ -155,61 +152,29 @@ export const getContributionReport = async (req, res) => {
 // @access  Private
 export const getTrendsReport = async (req, res) => {
   try {
-    const monthlyContributions = await Contribution.aggregate([
+    const monthlyShares = await Share.aggregate([
       {
         $group: {
           _id: {
             year: { $year: '$date' },
             month: { $month: '$date' }
           },
-          totalContributions: { $sum: '$amount' }
+          totalShares: { $sum: '$amount' }
         }
       },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
-    ]);
-
-    const monthlyLoans = await Loan.aggregate([
-      {
-        $group: {
-          _id: {
-            year: { $year: '$applicationDate' },
-            month: { $month: '$applicationDate' }
-          },
-          totalLoansIssued: { $sum: '$amount' }
-        }
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
-    ]);
-
-    const monthlyRepayments = await Loan.aggregate([
-      { $unwind: '$repayments' },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$repayments.date' },
-            month: { $month: '$repayments.date' }
-          },
-          totalRepayments: { $sum: '$repayments.amount' }
-        }
-      },
-      { $sort: { '_id.year': 1, '_id.month': 1 } }
-    ]);
-
-    // Combine into a single monthly data structure
-    const monthlyDataMap = new Map();
-
-    monthlyContributions.forEach(item => {
+//...
+    monthlyShares.forEach(item => {
       const key = `${item._id.year}-${item._id.month}`;
       if (!monthlyDataMap.has(key)) {
-        monthlyDataMap.set(key, { year: item._id.year, month: item._id.month, contributions: 0, loans: 0, repayments: 0 });
+        monthlyDataMap.set(key, { year: item._id.year, month: item._id.month, shares: 0, loans: 0, repayments: 0 });
       }
-      monthlyDataMap.get(key).contributions = item.totalContributions;
+      monthlyDataMap.get(key).shares = item.totalShares;
     });
 
     monthlyLoans.forEach(item => {
       const key = `${item._id.year}-${item._id.month}`;
       if (!monthlyDataMap.has(key)) {
-        monthlyDataMap.set(key, { year: item._id.year, month: item._id.month, contributions: 0, loans: 0, repayments: 0 });
+        monthlyDataMap.set(key, { year: item._id.year, month: item._id.month, shares: 0, loans: 0, repayments: 0 });
       }
       monthlyDataMap.get(key).loans = item.totalLoansIssued;
     });
@@ -217,7 +182,7 @@ export const getTrendsReport = async (req, res) => {
     monthlyRepayments.forEach(item => {
       const key = `${item._id.year}-${item._id.month}`;
       if (!monthlyDataMap.has(key)) {
-        monthlyDataMap.set(key, { year: item._id.year, month: item._id.month, contributions: 0, loans: 0, repayments: 0 });
+        monthlyDataMap.set(key, { year: item._id.year, month: item._id.month, shares: 0, loans: 0, repayments: 0 });
       }
       monthlyDataMap.get(key).repayments = item.totalRepayments;
     });

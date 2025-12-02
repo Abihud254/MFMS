@@ -50,8 +50,8 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     const notification: Notification = {
       id: Date.now(),
       type: 'payment_reminder',
-      title: 'Monthly Contribution Reminder',
-      message: `Hi ${memberName}, your monthly contribution of KES ${amount.toLocaleString()} is due. Please make your payment at your earliest convenience.`,
+      title: 'Monthly Share Reminder',
+      message: `Hi ${memberName}, your monthly share of KES ${amount.toLocaleString()} is due. Please make your payment at your earliest convenience.`,
       memberId,
       memberName,
       memberPhone,

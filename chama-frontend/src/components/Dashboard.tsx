@@ -34,7 +34,7 @@ export function Dashboard() {
     activeLoans: 0,
     totalLoaned: 0,
     nextMeeting: null,
-    pendingContributions: 0,
+    pendingShares: 0,
   });
   const [recentActivities, setRecentActivities] = useState<any[]>([]); // New state for recent activities
   const [loading, setLoading] = useState(true);
@@ -115,7 +115,7 @@ export function Dashboard() {
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'contribution':
+      case 'share':
         return <DollarSign className="h-4 w-4 text-green-600" />;
       case 'loan':
         return <Banknote className="h-4 w-4 text-blue-600" />;
@@ -130,7 +130,7 @@ export function Dashboard() {
 
   const getActivityColor = (type: string) => {
     switch (type) {
-      case 'contribution':
+      case 'share':
         return 'bg-green-100 text-green-800';
       case 'loan':
         return 'bg-blue-100 text-blue-800';
@@ -188,7 +188,7 @@ export function Dashboard() {
               <div>
                 <h3 className="font-semibold">Clear Database</h3>
                 <p className="text-sm text-muted-foreground">
-                  This will permanently delete all members, loans, contributions, and meetings. This action cannot be undone.
+                  This will permanently delete all members, loans, shares, and meetings. This action cannot be undone.
                 </p>
               </div>
               <AlertDialog>
@@ -269,7 +269,7 @@ export function Dashboard() {
               {stats.nextMeeting ? new Date(stats.nextMeeting).toLocaleDateString() : 'N/A'}
             </div>
             <p className="text-xs text-muted-foreground">
-              {stats.pendingContributions} pending contributions
+              {stats.pendingShares} pending shares
             </p>
           </CardContent>
         </Card>

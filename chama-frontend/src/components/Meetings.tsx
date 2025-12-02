@@ -249,7 +249,7 @@ export function Meetings() {
                   id="title"
                   value={newMeeting.title}
                   onChange={(e) => setNewMeeting({ ...newMeeting, title: e.target.value })}
-                  placeholder="Monthly Contributions Review"
+                  placeholder="Monthly Shares Review"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -287,7 +287,7 @@ export function Meetings() {
                   id="agenda"
                   value={newMeeting.agenda}
                   onChange={(e) => setNewMeeting({ ...newMeeting, agenda: e.target.value })}
-                  placeholder="Review monthly contributions&#10;Discuss loan applications&#10;Plan investment strategy"
+                  placeholder="Review monthly shares&#10;Discuss loan applications&#10;Plan investment strategy"
                   className="w-full min-h-[100px] px-3 py-2 border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none rounded-md"
                 />
               </div>

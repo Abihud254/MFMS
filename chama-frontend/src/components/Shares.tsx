@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface Contribution {
+interface Share {
   _id: string;
   member: {
     _id: string;
@@ -30,41 +30,42 @@ interface Member {
   name: string;
 }
 
-export function Contributions() {
+export function Shares() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newContribution, setNewContribution] = useState({
+  const [newShare, setNewShare] = useState({
     member: '',
     amount: '',
     type: 'monthly' as 'monthly' | 'special',
   });
-  const [contributions, setContributions] = useState<Contribution[]>([]);
+  const [shares, setShares] = useState<Share[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const { user } = useAuth();
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError('');
       try {
-        const [contributionsRes, membersRes] = await Promise.all([
-          fetch('https://mfms-1.onrender.com/api/contributions', {
+        const [sharesRes, membersRes] = await Promise.all([
+          fetch(`${apiUrl}/api/shares`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
-          fetch('https://mfms-1.onrender.com/api/members', {
+          fetch(`${apiUrl}/api/members`, {
             headers: { Authorization: `Bearer ${user?.token}` },
           }),
         ]);
 
-        const contributionsData = await contributionsRes.json();
+        const sharesData = await sharesRes.json();
         const membersData = await membersRes.json();
 
-        if (contributionsData.success) {
-          setContributions(contributionsData.data);
+        if (sharesData.success) {
+          setShares(sharesData.data);
         } else {
-          setError(contributionsData.error || 'Failed to fetch contributions');
+          setError(sharesData.error || 'Failed to fetch shares');
         }
 
         if (membersData.success) {
@@ -92,46 +93,46 @@ export function Contributions() {
     }).format(amount)
   }
 
-  const filteredContributions = contributions.filter(contribution =>
-    contribution.member.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredShares = shares.filter(share =>
+    share.member.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalContributions = contributions
+  const totalShares = shares
     .filter(c => c.status === 'completed')
     .reduce((sum, c) => sum + c.amount, 0);
 
-  const pendingContributions = contributions
+  const pendingShares = shares
     .filter(c => c.status === 'pending')
     .reduce((sum, c) => sum + c.amount, 0);
 
-  const handleAddContribution = async () => {
-    if (!newContribution.member || !newContribution.amount) {
+  const handleAddShare = async () => {
+    if (!newShare.member || !newShare.amount) {
       toast.error('Please fill in all fields');
       return;
     }
 
     try {
-      const res = await fetch('https://mfms-1.onrender.com/api/contributions', {
+      const res = await fetch(`${apiUrl}/api/shares`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user?.token}`,
         },
-        body: JSON.stringify(newContribution),
+        body: JSON.stringify(newShare),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        setContributions([data.data, ...contributions]);
-        setNewContribution({ member: '', amount: '', type: 'monthly' });
+        setShares([data.data, ...shares]);
+        setNewShare({ member: '', amount: '', type: 'monthly' });
         setIsAddDialogOpen(false);
-        toast.success('Contribution recorded successfully');
+        toast.success('Share recorded successfully');
       } else {
-        toast.error(data.error || 'Failed to record contribution');
+        toast.error(data.error || 'Failed to record share');
       }
     } catch (err) {
-      toast.error('An error occurred while recording the contribution');
+      toast.error('An error occurred while recording the share');
     }
   };
 
@@ -139,29 +140,29 @@ export function Contributions() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Contributions</h1>
+          <h1 className="text-3xl font-bold">Shares</h1>
           <p className="text-muted-foreground">
-            Track member contributions and payments
+            Track member shares and payments
           </p>
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Record Contribution
+              Record Share
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="bg-white">
             <DialogHeader>
-              <DialogTitle>Record New Contribution</DialogTitle>
+              <DialogTitle>Record New Share</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="member">Member</Label>
                 <Select
-                  value={newContribution.member}
+                  value={newShare.member}
                   onValueChange={(value) =>
-                    setNewContribution({ ...newContribution, member: value })
+                    setNewShare({ ...newShare, member: value })
                   }
                 >
                   <SelectTrigger>
@@ -181,10 +182,10 @@ export function Contributions() {
                 <Input
                   id="amount"
                   type="number"
-                  value={newContribution.amount}
+                  value={newShare.amount}
                   onChange={(e) =>
-                    setNewContribution({
-                      ...newContribution,
+                    setNewShare({
+                      ...newShare,
                       amount: e.target.value,
                     })
                   }
@@ -192,24 +193,24 @@ export function Contributions() {
                 />
               </div>
               <div>
-                <Label htmlFor="type">Contribution Type</Label>
+                <Label htmlFor="type">Share Type</Label>
                 <Select
-                  value={newContribution.type}
+                  value={newShare.type}
                   onValueChange={(value: 'monthly' | 'special') =>
-                    setNewContribution({ ...newContribution, type: value })
+                    setNewShare({ ...newShare, type: value })
                   }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="monthly">Monthly Contribution</SelectItem>
-                    <SelectItem value="special">Special Contribution</SelectItem>
+                    <SelectItem value="monthly">Monthly Share</SelectItem>
+                    <SelectItem value="special">Special Share</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button onClick={handleAddContribution} className="w-full">
-                Record Contribution
+              <Button onClick={handleAddShare} className="w-full">
+                Record Share
               </Button>
             </div>
           </DialogContent>
@@ -220,11 +221,11 @@ export function Contributions() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Contributions</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Shares</CardTitle>
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalContributions)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(totalShares)}</div>
             <p className="text-xs text-muted-foreground">
               This month
             </p>
@@ -237,7 +238,7 @@ export function Contributions() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(pendingContributions)}</div>
+            <div className="text-2xl font-bold">{formatCurrency(pendingShares)}</div>
             <p className="text-xs text-muted-foreground">
               Outstanding payments
             </p>
@@ -251,10 +252,10 @@ export function Contributions() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(totalContributions / (contributions.filter(c => c.status === 'completed').length || 1))}
+              {formatCurrency(totalShares / (shares.filter(c => c.status === 'completed').length || 1))}
             </div>
             <p className="text-xs text-muted-foreground">
-              Per contribution
+              Per share
             </p>
           </CardContent>
         </Card>
@@ -271,10 +272,10 @@ export function Contributions() {
         />
       </div>
 
-      {/* Contributions Table */}
+      {/* Shares Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Contributions</CardTitle>
+          <CardTitle>Recent Shares</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -305,21 +306,21 @@ export function Contributions() {
                     </Alert>
                   </TableCell>
                 </TableRow>
-              ) : filteredContributions.map((contribution) => (
-                <TableRow key={contribution._id}>
+              ) : filteredShares.map((share) => (
+                <TableRow key={share._id}>
                   <TableCell className="font-medium">
-                    {contribution.member.name}
+                    {share.member.name}
                   </TableCell>
-                  <TableCell>{formatCurrency(contribution.amount)}</TableCell>
-                  <TableCell>{new Date(contribution.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{formatCurrency(share.amount)}</TableCell>
+                  <TableCell>{new Date(share.date).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Badge variant={contribution.type === 'monthly' ? 'default' : 'secondary'}>
-                      {contribution.type}
+                    <Badge variant={share.type === 'monthly' ? 'default' : 'secondary'}>
+                      {share.type}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={contribution.status === 'completed' ? 'default' : 'destructive'}>
-                      {contribution.status}
+                    <Badge variant={share.status === 'completed' ? 'default' : 'destructive'}>
+                      {share.status}
                     </Badge>
                   </TableCell>
                 </TableRow>

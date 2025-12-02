@@ -23,7 +23,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 export function Reports() {
   const [selectedPeriod, setSelectedPeriod] = useState('current-month');
   const [financialSummary, setFinancialSummary] = useState<any>({});
-  const [memberContributions, setMemberContributions] = useState<any[]>([]);
+  const [memberShares, setMemberShares] = useState<any[]>([]);
   const [loanPerformance, setLoanPerformance] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,25 +36,9 @@ export function Reports() {
       setLoading(true);
       setError('');
       try {
-        const [summaryRes, contributionsRes, loanPerformanceRes, trendsRes] = await Promise.all([
-          fetch(`${apiUrl}/api/reports/financial-summary`, {
-            headers: { Authorization: `Bearer ${user?.token}` },
-          }),
-          fetch(`${apiUrl}/api/reports/contributions`, {
-            headers: { Authorization: `Bearer ${user?.token}` },
-          }),
-          fetch(`${apiUrl}/api/reports/loan-performance`, {
-            headers: { Authorization: `Bearer ${user?.token}` },
-          }),
-          fetch(`${apiUrl}/api/reports/trends`, {
-            headers: { Authorization: `Bearer ${user?.token}` },
-          }),
-        ]);
-
-        const summaryData = await summaryRes.json();
-        const contributionsData = await contributionsRes.json();
-        const loanPerformanceData = await loanPerformanceRes.json();
-        const trendsData = await trendsRes.json();
+        const [summaryRes, sharesRes, loanPerformanceRes, trendsRes] = await Promise.all([
+//...
+        const sharesData = await sharesRes.json();
 
         if (summaryData.success) {
           setFinancialSummary(summaryData.data);
@@ -62,10 +46,10 @@ export function Reports() {
           setError(summaryData.error || 'Failed to fetch financial summary');
         }
 
-        if (contributionsData.success) {
-          setMemberContributions(contributionsData.data);
+        if (sharesData.success) {
+          setMemberShares(sharesData.data);
         } else {
-          setError(prev => prev + (prev ? ' and ' : '') + (contributionsData.error || 'Failed to fetch member contributions'));
+          setError(prev => prev + (prev ? ' and ' : '') + (sharesData.error || 'Failed to fetch member shares'));
         }
 
         if (loanPerformanceData.success) {
@@ -235,7 +219,7 @@ export function Reports() {
       <Tabs defaultValue="financial" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="financial">Financial Summary</TabsTrigger>
-          <TabsTrigger value="contributions">Contributions</TabsTrigger>
+          <TabsTrigger value="shares">Shares</TabsTrigger>
           <TabsTrigger value="loans">Loan Performance</TabsTrigger>
           <TabsTrigger value="trends">Trends & Analytics</TabsTrigger>
         </TabsList>
@@ -249,9 +233,16 @@ export function Reports() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Total Contributions</span>
+                    <span className="text-sm font-medium">Total Shares</span>
                     <span className="text-sm font-bold text-green-600">
-                      {formatCurrency(financialSummary.totalContributions)}
+                      {formatCurrency(financialSummary.totalShares)}
+                    </span>
+                  </div>
+//...
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Average Monthly Share</span>
+                    <span className="text-sm font-bold">
+                      {formatCurrency(financialSummary.averageShare)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -285,9 +276,9 @@ export function Reports() {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Average Monthly Contribution</span>
+                    <span className="text-sm font-medium">Average Monthly Share</span>
                     <span className="text-sm font-bold">
-                      {formatCurrency(financialSummary.averageContribution)}
+                      {formatCurrency(financialSummary.averageShare)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -312,27 +303,27 @@ export function Reports() {
           </div>
         </TabsContent>
 
-        <TabsContent value="contributions">
+        <TabsContent value="shares">
           <Card>
             <CardHeader>
-              <CardTitle>Member Contribution Summary</CardTitle>
+              <CardTitle>Member Share Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Member</TableHead>
-                    <TableHead>Total Contributions</TableHead>
+                    <TableHead>Total Shares</TableHead>
                     <TableHead>Monthly Average</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Percentage of Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {memberContributions.map((member, index) => (
+                  {memberShares.map((member, index) => (
                     <TableRow key={index}>
                       <TableCell className="font-medium">{member.name}</TableCell>
-                      <TableCell>{formatCurrency(member.totalContributions)}</TableCell>
+                      <TableCell>{formatCurrency(member.totalShares)}</TableCell>
                       <TableCell>{formatCurrency(member.monthlyAverage)}</TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(member.status)}>
@@ -340,7 +331,7 @@ export function Reports() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {((member.totalContributions / financialSummary.totalContributions) * 100).toFixed(1)}%
+                        {((member.totalShares / financialSummary.totalShares) * 100).toFixed(1)}%
                       </TableCell>
                     </TableRow>
                   ))}
@@ -460,7 +451,7 @@ export function Reports() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Month</TableHead>
-                      <TableHead>Contributions</TableHead>
+                      <TableHead>Shares</TableHead>
                       <TableHead>Loans Issued</TableHead>
                       <TableHead>Repayments</TableHead>
                       <TableHead>Net Change</TableHead>
@@ -473,15 +464,15 @@ export function Reports() {
                                         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
                       const month = monthNames[data.month - 1] + ` ${data.year}`;
 
-                      const netChange = data.contributions + data.repayments - data.loans;
+                      const netChange = data.shares + data.repayments - data.loans;
                       const previousNet = index > 0 ?
-                        (monthlyData[index - 1].contributions + monthlyData[index - 1].repayments - monthlyData[index - 1].loans) :
+                        (monthlyData[index - 1].shares + monthlyData[index - 1].repayments - monthlyData[index - 1].loans) :
                         netChange;
 
                       return (
                         <TableRow key={index}>
                           <TableCell className="font-medium">{month}</TableCell>
-                          <TableCell>{formatCurrency(data.contributions)}</TableCell>
+                          <TableCell>{formatCurrency(data.shares)}</TableCell>
                           <TableCell>{formatCurrency(data.loans)}</TableCell>
                           <TableCell>{formatCurrency(data.repayments)}</TableCell>
                           <TableCell className={netChange >= 0 ? 'text-green-600' : 'text-red-600'}>
@@ -512,42 +503,16 @@ export function Reports() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-600 rounded-full" />
-                      <span className="text-sm">Consistent monthly growth in contributions</span>
+                      <span className="text-sm">Consistent monthly growth in shares</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                      <span className="text-sm">100% loan repayment rate maintained</span>
-                    </div>
+//...
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-purple-600 rounded-full" />
-                      <span className="text-sm">Average member contribution: {formatCurrency(financialSummary.averageContribution)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-orange-600 rounded-full" />
-                      <span className="text-sm">Zero defaults on loan portfolio</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recommendations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm font-medium text-blue-900">Investment Opportunity</p>
-                      <p className="text-xs text-blue-700">
-                        Consider investing surplus funds in government bonds for better returns
-                      </p>
-                    </div>
-                    <div className="p-3 bg-green-50 rounded-lg">
-                      <p className="text-sm font-medium text-green-900">Member Engagement</p>
+                      <span className="text-sm">Average member share: {formatCurrency(financialSummary.averageShare)}</span>
+//...
                       <p className="text-xs text-green-700">
-                        Follow up with Sarah Johnson on contribution schedule
+                        Follow up with Sarah Johnson on share schedule
                       </p>
-                    </div>
                     <div className="p-3 bg-purple-50 rounded-lg">
                       <p className="text-sm font-medium text-purple-900">Loan Policy</p>
                       <p className="text-xs text-purple-700">

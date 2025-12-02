@@ -1,5 +1,5 @@
 import Member from '../models/Member.js';
-import Contribution from '../models/Contribution.js';
+import Share from '../models/Share.js';
 import Loan from '../models/Loan.js';
 import User from '../models/User.js';
 
@@ -46,8 +46,8 @@ export const getMember = async (req, res) => {
       });
     }
 
-    // Get member's contributions
-    const contributions = await Contribution.find({ member: req.params.id })
+    // Get member's shares
+    const shares = await Share.find({ member: req.params.id })
       .sort({ date: -1 })
       .limit(10);
 
@@ -59,7 +59,7 @@ export const getMember = async (req, res) => {
       success: true,
       data: {
         member,
-        contributions,
+        shares,
         loans
       }
     });
