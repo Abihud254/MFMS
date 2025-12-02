@@ -152,18 +152,46 @@ export const getShareReport = async (req, res) => {
 // @access  Private
 export const getTrendsReport = async (req, res) => {
   try {
-    const monthlyShares = await Share.aggregate([
-      {
-        $group: {
-          _id: {
-            year: { $year: '$date' },
-            month: { $month: '$date' }
-          },
-          totalShares: { $sum: '$amount' }
-        }
+const monthlyShares = await Share.aggregate([
+  {
+    $group: {
+      _id: {
+        year: { $year: '$date' },
+        month: { $month: '$date' }
       },
-//...
-    monthlyShares.forEach(item => {
+      totalShares: { $sum: '$amount' }
+    }
+  }
+]);
+
+const monthlyLoans = await Loan.aggregate([
+  {
+    $group: {
+      _id: {
+        year: { $year: '$createdAt' },
+        month: { $month: '$createdAt' }
+      },
+      totalLoansIssued: { $sum: '$amount' }
+    }
+  }
+]);
+
+const monthlyRepayments = await Loan.aggregate([
+  { $unwind: { path: '$repayments', preserveNullAndEmptyArrays: true } },
+  {
+    $group: {
+      _id: {
+        year: { $year: '$repayments.date' },
+        month: { $month: '$repayments.date' }
+      },
+      totalRepayments: { $sum: '$repayments.amount' }
+    }
+  }
+]);
+
+const monthlyDataMap = new Map();
+
+monthlyShares.forEach(item => {
       const key = `${item._id.year}-${item._id.month}`;
       if (!monthlyDataMap.has(key)) {
         monthlyDataMap.set(key, { year: item._id.year, month: item._id.month, shares: 0, loans: 0, repayments: 0 });
